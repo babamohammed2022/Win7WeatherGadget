@@ -161,7 +161,14 @@ def iter_files(top):
 
 
 def rel(path, start=ROOT):
-    return os.path.relpath(path, start).replace(os.sep, "/")
+    try:
+        value = os.path.relpath(path, start)
+    except ValueError:
+        # On Windows, the caller may direct test/build outputs to a temporary
+        # directory on another drive. There is no relative path across drives;
+        # keep diagnostics useful without aborting the build.
+        value = os.path.abspath(path)
+    return value.replace(os.sep, "/")
 
 
 # ---------------------------------------------------------------------------

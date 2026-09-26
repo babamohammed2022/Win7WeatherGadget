@@ -30,6 +30,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -246,6 +247,12 @@ class BuildTests(unittest.TestCase):
 
     def test_build_succeeds(self):
         self.assertEqual(0, self.result.returncode, self.result.stdout)
+
+    def test_rel_handles_paths_on_another_volume(self):
+        build = load_build_module()
+        target = os.path.join(tempfile.gettempdir(), "external-output.zip")
+        with mock.patch.object(build.os.path, "relpath", side_effect=ValueError("different drives")):
+            self.assertEqual(os.path.abspath(target).replace(os.sep, "/"), build.rel(target))
 
     def test_gadget_archive_structure(self):
         with zipfile.ZipFile(os.path.join(self.dist, "Weather.gadget")) as zf:
