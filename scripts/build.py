@@ -473,7 +473,8 @@ def build_installer(argv, version, app_url):
     if lines:
         print("\n".join(lines))
     if proc.returncode != 0:
-        raise BuildError("ISCC failed with exit code %d" % proc.returncode)
+        detail = "\n".join(lines[-20:])
+        raise BuildError("ISCC failed with exit code %d\n%s" % (proc.returncode, detail))
     if not os.path.isfile(target):
         raise BuildError("ISCC did not produce dist/%s" % SETUP_NAME)
     log("created %s" % rel(os.path.join(DIST, SETUP_NAME)))
@@ -559,7 +560,10 @@ def main():
                 log("ISCC not found: installer skipped (use --require-installer to fail)")
         verify_outputs(outputs)
     except BuildError as exc:
-        print("[build] ERROR: %s" % exc, file=sys.stderr)
+        message = str(exc)
+        print("[build] ERROR: %s" % message, file=sys.stderr)
+        escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        print("::error title=Build failure::" + escaped)
         return 1
     return 0
 
