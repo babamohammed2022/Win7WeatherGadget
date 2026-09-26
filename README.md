@@ -2,7 +2,7 @@
 
 A multilingual restoration of the classic Windows Weather desktop gadget for Windows versions with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
 
-Version prepared for the first public release: **1.0.0**.
+
 
 ## Features
 
@@ -45,14 +45,7 @@ npm test
 
 Build artifacts and the reconstructed source tree are written to the ignored `dist/` folder. See [docs/BUILD.md](docs/BUILD.md) for details.
 
-## Original Source
-
-Original source/reference archive: <https://www.mediafire.com/file/qluqkiztg401b8a/gadgetoreganizatio.rar/file>
-
-## Credits
-
-The public source tree contains the project's code and translations; the downloadable setup and portable packages include the complete Weather gadget. See [NOTICE.md](NOTICE.md) for provenance and third-party notices.
 
 ## License
 
-The project's own files are licensed under the MIT License in [LICENSE](LICENSE). That license does not cover Microsoft-derived gadget files or third-party Inno Setup translations. See [NOTICE.md](NOTICE.md) for copyright and attribution details.
+The project's own files are licensed under the MIT License in [LICENSE](LICENSE).
