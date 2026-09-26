@@ -1,0 +1,360 @@
+/*//////////////////////////////////////////////////////////////////////////////
+//
+//  THIS CODE IS NOT APPROVED FOR USE IN/ON ANY OTHER UI ELEMENT OR PRODUCT COMPONENT.  
+//  Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+//
+//////////////////////////////////////////////////////////////////////////////*/
+
+
+label, input, button, fieldset 
+{ 
+  font-family: Segoe UI, Tahoma;
+  font-size:12px;
+  cursor:default; 
+}
+
+#SettingsWeather 
+{
+  padding: 0px 10px 10px 10px;
+  width:100%;
+}
+
+#PlaceInputArea 
+{
+  width: 300px;
+  padding-top: 3px;
+  cursor:text;
+}
+
+#PlaceCurrent 
+{
+  position:absolute;
+  top: 18px;
+  width:100%;
+  cursor:default;
+  white-space: nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font-weight:normal;
+}
+
+#textBoxBackground, #txtInputPlace, #btnSearchForPlace , #radioAutomatically
+{
+  position:absolute;
+}
+
+#textBoxBackground 
+{
+  top:73px;
+  left:20px;
+  width:240px;
+  height:24px;
+  margin-left:0px;
+  background:url(../images/search_background.png) no-repeat;
+  z-index:11;
+}
+
+#txtInputPlace 
+{
+  top:75px;
+  left:20px;
+  width:209px;
+  height:20px;
+  cursor:text;
+  overflow:hidden;
+  font-family:Segoe UI, Tahoma;
+  font-size:13px;
+  padding:0;
+  margin:0;
+  padding-left:5px;
+  padding-top:1px;
+  position:absolute;
+  border:none;
+  z-index:12;
+  padding-right:25px;
+  background-position:left;
+  margin-left:3px;
+}
+
+.BIDI #txtInputPlace 
+{
+  right:20px;
+  padding-left:25px;
+  padding-right:5px;
+  margin:0;
+  margin-right:3px;
+}
+
+
+
+
+
+#radioAutomatically, #radioManually
+{
+  position:absolute;
+  left:0px;
+}
+
+#radioAutomatically
+{
+  top:102px;
+}
+
+#radioManually
+{
+  top:75px;
+}
+
+.BIDI #radioAutomatically
+{
+  right:0px;
+}
+
+.BIDI #radioManually
+{
+  right:0px;
+}
+
+
+
+#LabelAutomatically
+{
+  position:absolute;
+  top:105px;
+  left:20px;
+}
+
+.BIDI #LabelAutomatically
+{
+  right:20px;
+}
+
+
+#privacyLinkDiv
+{
+  position:absolute;
+  top:130px;
+  left:0px;
+  right:auto;
+  max-width:300px;
+}
+
+#privacyArticleLink
+{
+  position:relative;
+  left:0px;
+  right:auto;
+  float: left;
+  max-width:300px;
+  font-size:12px;
+  display:block;
+}
+
+.BIDI #privacyLinkDiv
+{
+  left:auto;
+  right:0px;
+}
+
+.BIDI #privacyArticleLink
+{
+  left:auto;
+  right:0px;
+  float: right;
+}
+
+
+
+#LabelSelectLocation
+{
+  position:absolute;
+  top:50px;
+  left:0px;
+}
+
+.BIDI #LabelSelectLocation
+{
+  right:0px;
+}
+
+
+.BIDI #textBoxBackground 
+{
+  right:20px;
+}
+
+#btnSearchForPlace 
+{
+  position:absolute;
+  top:75px;
+  left:233px;
+  width:25px; 
+  height:20px; 
+  z-index:13;
+  cursor:default;
+}
+
+.BIDI #btnSearchForPlace 
+{
+  right:233px;
+}
+
+.btnSearch
+{ 
+  background:url(../images/btn_search_up.png) no-repeat; 
+}
+
+.btnSearchInsertionPoint
+{ 
+  background:url(../images/btn_search_up.png) no-repeat; 
+}
+
+.btnSearchOver
+{ 
+  background:url(../images/btn_search_over.png) no-repeat; 
+}
+
+.btnSearchDown
+{ 
+  background:url(../images/btn_search_down.png) no-repeat; 
+}
+
+.btnClear
+{ 
+  background:url(../images/btn_close_up.png) no-repeat; 
+}
+
+.btnClearInsertionPoint
+{ 
+  background:url(../images/btn_close_up.png) no-repeat; 
+}
+
+.btnClearOver
+{ 
+  background:url(../images/btn_close_over.png) no-repeat; 
+}
+
+.btnClearDown
+{ 
+  background:url(../images/btn_close_down.png) no-repeat; 
+}
+
+.BIDI .btnSearch
+{ 
+  background:url(../images/btn_search_up_BIDI.png) no-repeat; 
+}
+
+.BIDI .btnSearchInsertionPoint
+{ 
+  background:url(../images/btn_search_up_BIDI.png) no-repeat; 
+}
+
+.BIDI .btnSearchOver
+{ 
+  background:url(../images/btn_search_over_BIDI.png) no-repeat; 
+}
+
+.BIDI .btnSearchDown
+{ 
+  background:url(../images/btn_search_down_BIDI.png) no-repeat; 
+}
+
+.BIDI .btnClearDown 
+{ 
+  background:url(../images/btn_close_down_BIDI.png) no-repeat; 
+}
+
+.TextInputInactiveDefaultText
+{ 
+    color:Gray; 
+    font-style:italic;
+}
+
+.TextInputInactive 
+{ 
+  color:Gray;   
+}
+
+.TextInputActiveDefaultText   
+{ 
+  color:Black; 
+  font-style:italic;
+}
+
+.TextInputActive   
+{ 
+  color:Black; 
+}
+
+#spinner 
+{
+  margin-right:5px;
+}
+
+#PlacePossibilities 
+{
+  position:absolute;
+  top: 96px;
+  left: 20px;
+  height: 20px;
+max-width: 280px;
+  display:none;
+  background-color:white;
+  z-index: 10;
+}
+
+.BIDI #PlacePossibilities 
+{
+  right: 20px;
+}
+
+#PleaseWaitLoadingSpinner 
+{
+  position:absolute;
+  top: 100px;
+  left:25px;
+  height: 20px;
+  width:238px;
+  z-index:11;
+}
+
+.BIDI #PleaseWaitLoadingSpinner 
+{
+  right:25px;
+}
+
+.border 
+{
+  border: solid 1px black;
+  padding: 3px 3px 3px 3px;
+}
+
+#selectPlace 
+{
+  width:100%;
+  border: solid 10px black;
+}
+
+.SettingsTitle 
+{
+  font-size: 12px;
+}
+
+.SettingsString 
+{
+  font-weight: bold;
+}
+
+#DisplayDegreesRadioSet 
+{
+  padding: 10px 10px 5px 10px;
+  width:100%;
+}
+
+#DisplayDegreesRadioSetDiv 
+{
+  position:absolute;
+  top:170px;
+  width:100%;
+  height:100px;
+}

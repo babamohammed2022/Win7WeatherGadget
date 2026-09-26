@@ -1,0 +1,665 @@
+{
+ "_comment": "SHA-256 of the files of the gadget as found in the source archive (text files: decoded, LF line endings, UTF-8). Used by tests/test_repository.py to prove that Microsoft files are unchanged except for the documented patches.",
+ "files": {
+  "css/localizedSettings.css": {
+   "sha256": "7a7b7996c4760f72a991cdc62ed79140ae495467fcda656d5ac08381a115fbc7",
+   "kind": "text"
+  },
+  "css/settings.css": {
+   "sha256": "b96571e0f3cd03e1ab6640a3df500f76278f2a2b15c4d9a8d381c0abd9186972",
+   "kind": "text"
+  },
+  "css/weather.css": {
+   "sha256": "c8331de9c8cfa56b1e41b3c66c1cb062bac6d8c8955049996cf79dc710c6fb30",
+   "kind": "text"
+  },
+  "drag.png": {
+   "sha256": "746fca26250e1ff6bbe91f0f821cdad552ebfa31ac10f6ca0c54fc4338b6156d",
+   "kind": "binary"
+  },
+  "gadget.xml": {
+   "sha256": "69cd9cc02d4abeb2edcb860c7b918f0f33a6a28004a790d365ae363384fe8bbf",
+   "kind": "text"
+  },
+  "icon.png": {
+   "sha256": "5de6c8b3c7d9783cebc632424c56dd879506d337326a87484472d91f2f8eff6b",
+   "kind": "binary"
+  },
+  "images/1.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/10.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/11.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/12.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/120DPI/(120DPI)alertIcon.png": {
+   "sha256": "dfce162358d773c600bba5dfa15d5d15401dd9e7f7609cae25689c46bb464fe0",
+   "kind": "binary"
+  },
+  "images/120DPI/(120DPI)grayStateIcon.png": {
+   "sha256": "918460c79a0fa07129627905de1702e3e68cd2264d13584d206fe982c0f8f265",
+   "kind": "binary"
+  },
+  "images/120DPI/(120DPI)greenStateIcon.png": {
+   "sha256": "d714f8b0c4affccc9924b727f215d875bba98bb383a266132392fc52bab6df3d",
+   "kind": "binary"
+  },
+  "images/120DPI/(120DPI)notConnectedStateIcon.png": {
+   "sha256": "c0d40fbddfe0065c0d32ac85bf92a137c57e84d5ad88b72cb8837f6c66af9eb7",
+   "kind": "binary"
+  },
+  "images/120DPI/(120DPI)redStateIcon.png": {
+   "sha256": "c0d40fbddfe0065c0d32ac85bf92a137c57e84d5ad88b72cb8837f6c66af9eb7",
+   "kind": "binary"
+  },
+  "images/13.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/14.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/144DPI/(144DPI)alertIcon.png": {
+   "sha256": "21cf16580674ce8ccaed67d723e6c6f65f703c4d26982275d6ac5d673359fd5b",
+   "kind": "binary"
+  },
+  "images/144DPI/(144DPI)grayStateIcon.png": {
+   "sha256": "80cddc9cb35b64fa713c6177fa19a50423cab2a1d0bf495e1c57cbb7bacd072b",
+   "kind": "binary"
+  },
+  "images/144DPI/(144DPI)greenStateIcon.png": {
+   "sha256": "281e29017e136d6a639c48a98a411b836945c12fd16549a8ccea458ead1487b6",
+   "kind": "binary"
+  },
+  "images/144DPI/(144DPI)notConnectedStateIcon.png": {
+   "sha256": "419116de2d2389b62e5cfc780bc349918cb034dcdde12392ba973eda108a5799",
+   "kind": "binary"
+  },
+  "images/144DPI/(144DPI)redStateIcon.png": {
+   "sha256": "419116de2d2389b62e5cfc780bc349918cb034dcdde12392ba973eda108a5799",
+   "kind": "binary"
+  },
+  "images/15.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/16.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/17.png": {
+   "sha256": "f564dd2b3feea44a60d83b82ddc1ddccb07f4d39416415e0c5f6f0824cdba109",
+   "kind": "binary"
+  },
+  "images/18.png": {
+   "sha256": "f564dd2b3feea44a60d83b82ddc1ddccb07f4d39416415e0c5f6f0824cdba109",
+   "kind": "binary"
+  },
+  "images/19.png": {
+   "sha256": "9b580f755411538ad66b74709338ee10085b0772db6bdc3e3ce5b12dc02f4dd9",
+   "kind": "binary"
+  },
+  "images/1px.gif": {
+   "sha256": "b1442e85b03bdcaf66dc58c7abb98745dd2687d86350be9a298a1d9382ac849b",
+   "kind": "binary"
+  },
+  "images/2.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/20.png": {
+   "sha256": "9b580f755411538ad66b74709338ee10085b0772db6bdc3e3ce5b12dc02f4dd9",
+   "kind": "binary"
+  },
+  "images/21.png": {
+   "sha256": "9b580f755411538ad66b74709338ee10085b0772db6bdc3e3ce5b12dc02f4dd9",
+   "kind": "binary"
+  },
+  "images/22.png": {
+   "sha256": "9b580f755411538ad66b74709338ee10085b0772db6bdc3e3ce5b12dc02f4dd9",
+   "kind": "binary"
+  },
+  "images/23.png": {
+   "sha256": "2bcde7b0c5175a46fa7d15f7fccb1fbbd234241215c088b8c8185012b9363409",
+   "kind": "binary"
+  },
+  "images/24.png": {
+   "sha256": "2bcde7b0c5175a46fa7d15f7fccb1fbbd234241215c088b8c8185012b9363409",
+   "kind": "binary"
+  },
+  "images/25.png": {
+   "sha256": "2bcde7b0c5175a46fa7d15f7fccb1fbbd234241215c088b8c8185012b9363409",
+   "kind": "binary"
+  },
+  "images/26.png": {
+   "sha256": "66614ae5b00ba396c446b993cc7fccc30e4902ce88bb9158737281eb62e3aad0",
+   "kind": "binary"
+  },
+  "images/27.png": {
+   "sha256": "66614ae5b00ba396c446b993cc7fccc30e4902ce88bb9158737281eb62e3aad0",
+   "kind": "binary"
+  },
+  "images/28.png": {
+   "sha256": "66614ae5b00ba396c446b993cc7fccc30e4902ce88bb9158737281eb62e3aad0",
+   "kind": "binary"
+  },
+  "images/29.png": {
+   "sha256": "1166b22ef77c7940b170a5dc98d77099311068b49379dc66822c6d840e89b5b8",
+   "kind": "binary"
+  },
+  "images/3.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/30.png": {
+   "sha256": "1166b22ef77c7940b170a5dc98d77099311068b49379dc66822c6d840e89b5b8",
+   "kind": "binary"
+  },
+  "images/31.png": {
+   "sha256": "be6774aa4dbe28c2df435f0cf70dd273fd2a600a45cff294bb51666caf889f2e",
+   "kind": "binary"
+  },
+  "images/32.png": {
+   "sha256": "be6774aa4dbe28c2df435f0cf70dd273fd2a600a45cff294bb51666caf889f2e",
+   "kind": "binary"
+  },
+  "images/33.png": {
+   "sha256": "1166b22ef77c7940b170a5dc98d77099311068b49379dc66822c6d840e89b5b8",
+   "kind": "binary"
+  },
+  "images/34.png": {
+   "sha256": "1166b22ef77c7940b170a5dc98d77099311068b49379dc66822c6d840e89b5b8",
+   "kind": "binary"
+  },
+  "images/35.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/36.png": {
+   "sha256": "be6774aa4dbe28c2df435f0cf70dd273fd2a600a45cff294bb51666caf889f2e",
+   "kind": "binary"
+  },
+  "images/37.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/38.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/39.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/4.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/40.png": {
+   "sha256": "a03d5a9bfa5cf5c614abd7ad1c64cb1caa2b1eb46303f89f74c278be1f11cb28",
+   "kind": "binary"
+  },
+  "images/41.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/42.png": {
+   "sha256": "8bacce259a2acb3d9e7556a1a432009734549674858604ad5e89f10170d5367d",
+   "kind": "binary"
+  },
+  "images/43.png": {
+   "sha256": "8bacce259a2acb3d9e7556a1a432009734549674858604ad5e89f10170d5367d",
+   "kind": "binary"
+  },
+  "images/44.png": {
+   "sha256": "5c510c7c6d86aa7b8f09f265d96afbe14beb034c6fb74509e9593b2d4862b290",
+   "kind": "binary"
+  },
+  "images/45.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/46.png": {
+   "sha256": "917b1fb74f73aaa5f9fa0e5905508a2c91cd4e7e825cbf9a3452ab1f0356f9a9",
+   "kind": "binary"
+  },
+  "images/47.png": {
+   "sha256": "d4d74fa3f867e41db1e825ee61055a91940cfbfd3e731ab00121317d2dca6c6d",
+   "kind": "binary"
+  },
+  "images/5.png": {
+   "sha256": "86968256c8b714d69861984d9dcdd896c47b80e00d2607bedf3ca425f895f7ab",
+   "kind": "binary"
+  },
+  "images/6.png": {
+   "sha256": "86968256c8b714d69861984d9dcdd896c47b80e00d2607bedf3ca425f895f7ab",
+   "kind": "binary"
+  },
+  "images/7.png": {
+   "sha256": "86968256c8b714d69861984d9dcdd896c47b80e00d2607bedf3ca425f895f7ab",
+   "kind": "binary"
+  },
+  "images/8.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/9.png": {
+   "sha256": "e5594e0d76c16811ae316ca81684e7e4dd9abfe553396046457b55f11f49f1a3",
+   "kind": "binary"
+  },
+  "images/activity16v.png": {
+   "sha256": "06c2c37091f75e2ea22b12595e72b7bbeb6e8d01b691d16c2421c7f4524c45b0",
+   "kind": "binary"
+  },
+  "images/alertIcon.png": {
+   "sha256": "b5f40b6bda5b7e72296e4755ef8a6999cfd16ea863e421a4e0081a5b0181ef34",
+   "kind": "binary"
+  },
+  "images/btn_close_down.png": {
+   "sha256": "a8173463997aa9eb8db376d3ca210868b7403fd072dce52a3b42772becae67be",
+   "kind": "binary"
+  },
+  "images/btn_close_down_BIDI.png": {
+   "sha256": "ddeb83b820041079f9b90263e1ff36c4001d96c663dc43b469a583318576ed66",
+   "kind": "binary"
+  },
+  "images/btn_close_over.png": {
+   "sha256": "2681348839429709c25cc8e37a3b654c57c659186c25c8d89c8f740f953b74a3",
+   "kind": "binary"
+  },
+  "images/btn_close_up.png": {
+   "sha256": "5c99aadd31bca9a757c775f72101d552e614dc1c7dde1ec81fa36c53a8ba9f4a",
+   "kind": "binary"
+  },
+  "images/btn_search_down.png": {
+   "sha256": "507144699b8d15c7cc358fa7d76d8be6d56138c2259e2a07d39696fefd8d4a61",
+   "kind": "binary"
+  },
+  "images/btn_search_down_BIDI.png": {
+   "sha256": "174dbcf0649b67d7cc058d2f2d3ac778b82e6b8c24078a85f6ab7f68b7581d17",
+   "kind": "binary"
+  },
+  "images/btn_search_over.png": {
+   "sha256": "672a5364352e5f86e4a272cfb3be1c40d57b43574ec8c838799e2b529927f679",
+   "kind": "binary"
+  },
+  "images/btn_search_over_BIDI.png": {
+   "sha256": "04f396f2f59c8f37ada15002119481af3f4a66ff05cc88f622d6799bfe10e538",
+   "kind": "binary"
+  },
+  "images/btn_search_up.png": {
+   "sha256": "fb5729c64a75a0640a9c974d85671ac57f3e77ddaecc7dc047ec2f4dbc7fd8ae",
+   "kind": "binary"
+  },
+  "images/btn_search_up_BIDI.png": {
+   "sha256": "b5237b776ccbbe2447c3ef058dbdb923855d134b3614368d400ec931b86f0a4a",
+   "kind": "binary"
+  },
+  "images/divider-horizontal.png": {
+   "sha256": "b7ca3a37e6e3f49160287133c9ef58db3a0f59c5d9e65cb68f5c9c34fee1ef54",
+   "kind": "binary"
+  },
+  "images/divider-vertical.png": {
+   "sha256": "e7a47f85d911f6bdeeaeed490a83dc40a5f4375ec2db333e6e337c439d7721cb",
+   "kind": "binary"
+  },
+  "images/docked-loading.png": {
+   "sha256": "62b6a37516865cb0b115a4b429ccc7c63cc97c4c57f6e745750749570b28033d",
+   "kind": "binary"
+  },
+  "images/docked_black_cloudy.png": {
+   "sha256": "c6acdf419aa54c5b50338b4deae2ab6c2149508e08c23569eba8e56cb9fa6909",
+   "kind": "binary"
+  },
+  "images/docked_black_few-showers.png": {
+   "sha256": "d792ca77c111d1169ed3de48828163d00e3a02c063a98504c0d140c9d8126e11",
+   "kind": "binary"
+  },
+  "images/docked_black_foggy.png": {
+   "sha256": "98df3bc75b9f3d7287d152b76874912be7cd3a353e371bc56a599e0a7bc0af81",
+   "kind": "binary"
+  },
+  "images/docked_black_hail.png": {
+   "sha256": "a9d48b84c695bd7c93a605144ef352f00f7b47bf16156e8995f5209a44b4d4b8",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-first-quarter.png": {
+   "sha256": "7f80be5ed41cc4b9c277aa624e82a34e3d76d08bf93e49170d0f50baa6243ec4",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-first-quarter_partly-cloudy.png": {
+   "sha256": "4ce53d7d10b5dead138ff44146532ee58ede302d98a6dba54718d5327ff64183",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-full.png": {
+   "sha256": "a746046f385edb62ab964b82a135647c268a85baf000d831fd94ae0f2b9af612",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-full_partly-cloudy.png": {
+   "sha256": "b798c3fe06468a9190ead329d63bbcbe756bd8d5d9b8b1f212280cded8e10933",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-last-quarter.png": {
+   "sha256": "4efcb0e2b866e1d95fea59ec215f35f1ee411890e234c2afda3d12f8c39d3809",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-last-quarter_partly-cloudy.png": {
+   "sha256": "78450cf80aac87ffa93542cd0df4756df25cd902991775edd74fbf0c96fd9121",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-new.png": {
+   "sha256": "f3ae4b39cbeaf8beafa67f0d514bee68b94cbed05d24bec4edd164bd1efc198c",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-new_partly-cloudy.png": {
+   "sha256": "e8348d85ab2e63408f4fc36caeea33a4f3a6e46808b9fba246589686a173ca23",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waning-crescent.png": {
+   "sha256": "c0ab272bae1861c46fa466d614e1b1e41b54a451ff197ca19cd4debabbfda4a5",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waning-crescent_partly-cloudy.png": {
+   "sha256": "76458b032671a2edb41ea9ad3128ede0b5f04d59913a457d715db9961d97ab68",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waning-gibbous.png": {
+   "sha256": "1f8140986d47a7baacb510afaaf026e8b0130e72906bd1adc2893e81640870a8",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waning-gibbous_partly-cloudy.png": {
+   "sha256": "7afbcfe3e2689e6f3eec7256b6e7c4651dfa600a6f83353ec699ba4a2f8e100c",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waxing-crescent.png": {
+   "sha256": "99a3f34fe4c14a913835e2ab5cb509ba37856fe414056663b03717637ec917ef",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waxing-crescent_partly-cloudy.png": {
+   "sha256": "68164877139989528d3ab221593e8d99720ecba07aebafdb40df797e259d4972",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waxing-gibbous.png": {
+   "sha256": "c15608a65f2a129cbbfc220c8ff0a0502d3457e95cff76ecf931986f63c7273f",
+   "kind": "binary"
+  },
+  "images/docked_black_moon-waxing-gibbous_partly-cloudy.png": {
+   "sha256": "05a65e28f76c79c4f4a36054008868e2c7daa8baec95187c481c6e81a2579e82",
+   "kind": "binary"
+  },
+  "images/docked_black_rainy.png": {
+   "sha256": "8978e1b7f39e974219344d0508ecac759e2619f456e6253f87dd75ba1c7de81c",
+   "kind": "binary"
+  },
+  "images/docked_black_snow.png": {
+   "sha256": "60b59de14427cb218b4c27ccf614ae832e9e6225fbbef7366e66d144ee632908",
+   "kind": "binary"
+  },
+  "images/docked_black_thunderstorm.png": {
+   "sha256": "d822e88494447f59182a5b77e9beaf9fe34aa5052efca637cf1bbc26e884c090",
+   "kind": "binary"
+  },
+  "images/docked_black_windy.png": {
+   "sha256": "65529ec7ad8a1e9246c7d4b167d279c3baf489ff99b4f4eb9de8a164b602ab5b",
+   "kind": "binary"
+  },
+  "images/docked_blue_partly-cloudy.png": {
+   "sha256": "f311888b4e209976fa65d766d67b8f26a8ca5106bd376e5d6314c45b0f27684f",
+   "kind": "binary"
+  },
+  "images/docked_blue_snow.png": {
+   "sha256": "b17f2063d561f9345c4d138a46ef38224fe2c065e37fb58212a6960661578402",
+   "kind": "binary"
+  },
+  "images/docked_blue_sun.png": {
+   "sha256": "d7aecc931b03cbea02715227342e931f39d1c2fe24fb2bcdcdd8b511e8029e7a",
+   "kind": "binary"
+  },
+  "images/docked_blue_windy.png": {
+   "sha256": "0987ac9d3ce4a0faa315cd39833d419052832fd6f98fefc0bd97021a33787890",
+   "kind": "binary"
+  },
+  "images/docked_gray_cloudy.png": {
+   "sha256": "f985f87325c22257ed5b78fcc154605902a9e65e1eede6823187177459ee3827",
+   "kind": "binary"
+  },
+  "images/docked_gray_few-showers.png": {
+   "sha256": "45f46521af6dff7ab555eb68fab923405bb2d64ac4740cbbd000998b3210660f",
+   "kind": "binary"
+  },
+  "images/docked_gray_foggy.png": {
+   "sha256": "9f080a4a2948cf816e4c6fd373f4407568d3bd23e8c65e83298194d994433fb0",
+   "kind": "binary"
+  },
+  "images/docked_gray_hail.png": {
+   "sha256": "adfb6db18a4898295515b7325b1a333bf6bbc4b8b749112dc6b07370fa1c260a",
+   "kind": "binary"
+  },
+  "images/docked_gray_rainy.png": {
+   "sha256": "7161d60e5d7ac6cbeef6a54b854b2031a217d52c4f42b6f1985f91e69403d823",
+   "kind": "binary"
+  },
+  "images/docked_gray_snow.png": {
+   "sha256": "cbda423828a061bee75b37119a6b26a5a5436dc984af52ba5bf8bdb68a0163c7",
+   "kind": "binary"
+  },
+  "images/docked_gray_thunderstorm.png": {
+   "sha256": "567db1bd13a0424c99dc745658b11e647fc10b72c2963204f751ac038e2ac5e2",
+   "kind": "binary"
+  },
+  "images/grayStateIcon.png": {
+   "sha256": "307b490394fd6c71f3229b08cfddf1265e8d8c6e3fcbf56973a6dbda0db61e26",
+   "kind": "binary"
+  },
+  "images/greenStateIcon.png": {
+   "sha256": "31d14da9ae0d7b35038c6154f412ef6d5cf55106ec776035ca18471acf408ade",
+   "kind": "binary"
+  },
+  "images/info.png": {
+   "sha256": "2ab28364860b34593bb53c75de94014940f1279d6037986dc65b6cf5760b8ef1",
+   "kind": "binary"
+  },
+  "images/notConnectedStateIcon.png": {
+   "sha256": "4479f075f909bb5472dbb36575693df71f459937c7e169db6a13efd963be594c",
+   "kind": "binary"
+  },
+  "images/redStateIcon.png": {
+   "sha256": "4479f075f909bb5472dbb36575693df71f459937c7e169db6a13efd963be594c",
+   "kind": "binary"
+  },
+  "images/search_background.png": {
+   "sha256": "b7b24c2d115d40890af0c85e3bc345c6d885bb7733f72d389b56b042f91432fa",
+   "kind": "binary"
+  },
+  "images/undocked-loading.png": {
+   "sha256": "56d62edd00231135acdec72deeaffd041f0e12b0236e32b9a39d6c94858e974f",
+   "kind": "binary"
+  },
+  "images/undocked_black_cloudy.png": {
+   "sha256": "8f3cbac395c2db8d2caf206ada9e720aa3dde452193de6fb4fad39753cc88b76",
+   "kind": "binary"
+  },
+  "images/undocked_black_few-showers.png": {
+   "sha256": "36acea787baeea36bd3cc1bf74fbfee7a13ab5e4ec76ea673454e3164bc81f8b",
+   "kind": "binary"
+  },
+  "images/undocked_black_foggy.png": {
+   "sha256": "84b52e65b850bb509811469389a3807031b357acf79aa16edd8688005509dc01",
+   "kind": "binary"
+  },
+  "images/undocked_black_hail.png": {
+   "sha256": "c68759f8e1a5be2061ab65f80fac89d04dc10a93846b9774fd5ab646289428e3",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-first-quarter.png": {
+   "sha256": "cc71f0a2d5dec679470180fe9ca44b8b9b8c932b3a2b6fabb94c2ee21f280f64",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-first-quarter_partly-cloudy.png": {
+   "sha256": "978763917ae72706f652394829c1ed6dd42f8a5723758eb88a642cbc2b879ffb",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-full.png": {
+   "sha256": "23b4aabbcd27f20a3532153bf295c046315070e0a0b380c063551e1d804b053b",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-full_partly-cloudy.png": {
+   "sha256": "879a57f885bcbebfe92c4f5dcb7b1fd40cc872b7526114990af734ad78994ae6",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-last-quarter.png": {
+   "sha256": "6d8810b86ae4160c5ceac973528218d909c3ef1360536d6144d9c3e37d971127",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-last-quarter_partly-cloudy.png": {
+   "sha256": "f10b38859f237193edc532d7211d43d27651eec6b622643ca0476ccdb42ee54b",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-new.png": {
+   "sha256": "ea63331b0bc38237ac38785ae1355f98f60607119577142b7700b6c51e5515c2",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-new_partly-cloudy.png": {
+   "sha256": "9b70679147b7ec66a4c1e207ed2e802bc3d324fd39e800c588269952edf19d2c",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waning-crescent.png": {
+   "sha256": "c16d32e20c290727977ef353c6a3dcec2278aa14b615bdccaef6d76d9b10c526",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waning-crescent_partly-cloudy.png": {
+   "sha256": "8ee318c44765210c681916cdff41a54966a631f731b91028420c69093b158f51",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waning-gibbous.png": {
+   "sha256": "43d6565fbddd4b56ce20b665446a0dd1c8d5398ce8e09ab2817d287bd69a7698",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waning-gibbous_partly-cloudy.png": {
+   "sha256": "e05ee7b64c7b9cf4b5d8537fa50b5dfd1c79d3511715a5aedfb8c48994a735da",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waxing-crescent.png": {
+   "sha256": "091089c98fcf1b42c0f1d51fe58f65df5d8b71c8d2ef06680f9f88d7a01d57f2",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waxing-crescent_partly-cloudy.png": {
+   "sha256": "e346544ae50d9476a22de7987bfb5d68d156466076cb1c26a8d7f545c4f8ef84",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waxing-gibbous.png": {
+   "sha256": "65ff5f6f354042af89eab9578bee4a8b1d999d8dec8d7f37dfcdb9715a58db99",
+   "kind": "binary"
+  },
+  "images/undocked_black_moon-waxing-gibbous_partly-cloudy.png": {
+   "sha256": "c5f66b47d3aa10f8eef250fdc0ab24ff43b4ddb1c99ae7b51fe09f5370f151fd",
+   "kind": "binary"
+  },
+  "images/undocked_black_rainy.png": {
+   "sha256": "4b470e820943a0275972821e74c880f73853a3c101d11224e22a756a58053eb7",
+   "kind": "binary"
+  },
+  "images/undocked_black_snow.png": {
+   "sha256": "e2a8c9e247302898532571206b5fc40f450b5a6d18ca5d599888461ea4e7fd45",
+   "kind": "binary"
+  },
+  "images/undocked_black_thunderstorm.png": {
+   "sha256": "87334a1d352d7fabe3d9b37d72a1cf991b9ee0ea80a59cf6b17dcf64a7ceac91",
+   "kind": "binary"
+  },
+  "images/undocked_black_windy.png": {
+   "sha256": "6dc195ef5c09415147723c3a2c8e7a307f7d44017ae33e3b36763c1461cf2176",
+   "kind": "binary"
+  },
+  "images/undocked_blue_partly-cloudy.png": {
+   "sha256": "7ba03f453f23f1fe563b273d23877c7ca329a8186a4052255144c15426ff5957",
+   "kind": "binary"
+  },
+  "images/undocked_blue_snow.png": {
+   "sha256": "591c47781b678ff36a94cb0ffa3ffddd0b26d382b3f90b7ce0bfb9b85bcab3e6",
+   "kind": "binary"
+  },
+  "images/undocked_blue_sun.png": {
+   "sha256": "ee6103091ae43ffad8c395bca1c8607fedeeed10d4e0ae70175ae539e1dfe57f",
+   "kind": "binary"
+  },
+  "images/undocked_blue_windy.png": {
+   "sha256": "2ea7fa9ac4bd4ce699ee7bf37a197186846d388f5c431ae959b67fe4279987cd",
+   "kind": "binary"
+  },
+  "images/undocked_gray_cloudy.png": {
+   "sha256": "072b0c0227021b4e555693554ee07f88296c31af9c782d7bbfae8548eb92497d",
+   "kind": "binary"
+  },
+  "images/undocked_gray_few-showers.png": {
+   "sha256": "9f3dcb4c5f143188e1d5c12b7abbedea9586a7fc515d8eace8108921027106a1",
+   "kind": "binary"
+  },
+  "images/undocked_gray_foggy.png": {
+   "sha256": "fd0584121891f3b510b2159c70d02ed72c4afad5c4cf84b290ccc45a82619087",
+   "kind": "binary"
+  },
+  "images/undocked_gray_hail.png": {
+   "sha256": "815007b2d7ffc4e583e504e2a1757f5acfef6871abc098fa3f3251544b806dab",
+   "kind": "binary"
+  },
+  "images/undocked_gray_rainy.png": {
+   "sha256": "aaac315a5e1fa87b854089cf75335cea400a8b051b282d0b798f79457e30366e",
+   "kind": "binary"
+  },
+  "images/undocked_gray_snow.png": {
+   "sha256": "845063db4bfa761135af87c14d84a489f91ee63d1fedbe2fe376b47a61785545",
+   "kind": "binary"
+  },
+  "images/undocked_gray_thunderstorm.png": {
+   "sha256": "62118e38b52a7b8bdd2081d0fbadff16fb62f62979e0b3ce8a487fd351143811",
+   "kind": "binary"
+  },
+  "js/highDpiImageSwap.js": {
+   "sha256": "3f16dee71474a9d8653901a4b83a04be18c327e2d819949a2169d015cde41c34",
+   "kind": "text"
+  },
+  "js/library.js": {
+   "sha256": "52c64a58010331bae846793d99b1ed44e42165ee2c1c9c159543ff03bd1077c0",
+   "kind": "text"
+  },
+  "js/localizedStrings.js": {
+   "sha256": "fe72b2f7850ca8a9f1362ba18d292f1087be828527c71ab1db0670136a221e0c",
+   "kind": "text"
+  },
+  "js/settings.js": {
+   "sha256": "fdb0b75dab1f0d1ceb1e3f01cb82d351fe7a00d323e74dc00db3570f769c5300",
+   "kind": "text"
+  },
+  "js/weather.js": {
+   "sha256": "53ee7508835d130a1308cefc220232cb2ec48dee73ad519925a13159afc38583",
+   "kind": "text"
+  },
+  "js/wlservices_shim.js": {
+   "sha256": "e9686c6311f581f6907acfeab99eb632c7db4ce085eb394ae2cfb1e217503821",
+   "kind": "text"
+  },
+  "logo.png": {
+   "sha256": "07815a1636ce60f71a57f6bde076f3d5cff916e116aaae6660e2a5eaab1289a4",
+   "kind": "binary"
+  },
+  "settings.html": {
+   "sha256": "cb2d17f81ae56c05991cb26678f23da11d443e723ccb80c365b59095bb37cab2",
+   "kind": "text"
+  },
+  "weather.html": {
+   "sha256": "eebb75d01558a69e20457dbdc97a180fc473ef9d907dd2688658a037da1b40cd",
+   "kind": "text"
+  }
+ }
+}
