@@ -93,7 +93,7 @@ class RepositoryTests(unittest.TestCase):
         for rel in ["README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "VERSION", ".gitignore",
                     ".gitattributes", "package.json", "package-lock.json",
                     "installer/Setup.iss", "installer/README.txt", "installer/README.it.txt", "installer/icon.ico",
-                    "scripts/build.py", "scripts/check_localization.py",
+                    "scripts/build.py", "scripts/check_localization.py", "scripts/run_tests.py",
                     "scripts/Install.cmd", "scripts/Uninstall.cmd", "scripts/Diagnostics.cmd",
                     "scripts/Launch.cmd", "scripts/Remove.cmd", "portable/README.txt",
                     "scripts/tools/CleanGadgetSettings.ps1", "scripts/tools/Diagnostics.ps1",
