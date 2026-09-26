@@ -3,23 +3,25 @@
 
 Steps
 -----
-1. Validate the source tree (required files, 20 locales, VERSION).
-2. Stage the gadget into dist/stage/gadget/Weather.gadget, converting the
-   .js/.html/.css files from UTF-8 (repository format) to UTF-16LE with BOM
-   and CRLF line endings (the format of Microsoft's original gadget, which is
-   what the Windows Sidebar engine is known to load correctly).
-3. Create dist/Weather.gadget (ZIP archive with gadget.xml at its root,
+1. Download the pinned v1.0.0 portable release asset as the gadget baseline,
+   verify its SHA-256, then overlay the project's own source files.
+2. Validate the assembled source tree (required files, 20 locales, VERSION).
+3. Stage the gadget into dist/stage/gadget/Weather.gadget, converting the
+   .js/.html/.css files from UTF-8 to UTF-16LE with BOM and CRLF line endings
+   (the format of Microsoft's original gadget, which Sidebar expects).
+4. Create dist/Weather.gadget (ZIP archive with gadget.xml at its root,
    installable with a double-click when a gadget runtime is present).
-4. Create dist/Win7WeatherGadget-Portable.zip (runtime files, launcher, and removal helper).
-5. Compile installer/Setup.iss with Inno Setup (ISCC) into
+5. Create dist/Win7WeatherGadget-Portable.zip (runtime files, launcher, and removal helper).
+6. Compile installer/Setup.iss with Inno Setup (ISCC) into
    dist/Win7WeatherGadget-Setup.exe, when ISCC is available.
-6. Verify the outputs and write dist/SHA256SUMS.txt.
+7. Verify the outputs and write dist/SHA256SUMS.txt.
 
 Usage
 -----
-    python scripts/build.py                     # everything; installer if ISCC found
+    python scripts/build.py                     # downloads baseline; all outputs
     python scripts/build.py --skip-installer    # gadget + ZIP only
     python scripts/build.py --require-installer # fail if ISCC is not found (CI)
+    python scripts/build.py --payload-zip FILE  # use a local copy of the pinned baseline
 
 ISCC is looked up in this order: --iscc, the ISCC environment variable, PATH,
 then the default Inno Setup 6 folders. On Linux, a Wine command can be given,
@@ -31,6 +33,7 @@ Only the Python standard library is used.
 import argparse
 import hashlib
 import io
+import json
 import os
 import re
 import shutil
@@ -40,8 +43,13 @@ import time
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "src", "Weather.gadget")
+OVERLAY_SRC = os.path.join(ROOT, "src", "Weather.gadget")
 DIST = os.path.join(ROOT, "dist")
+SRC = os.path.join(DIST, "source", "Weather.gadget")
+PAYLOAD_CACHE = os.path.join(ROOT, "dist", "cache", "Win7WeatherGadget-Portable-v1.0.0.zip")
+PAYLOAD_URL = "https://github.com/babamohammed2022/Win7WeatherGadget/releases/download/v1.0.0/Win7WeatherGadget-Portable.zip"
+PAYLOAD_SHA256 = "672b04fe31aab9a34157022a9665b25ffed836bdff769ab00b052828be844d9f"
+PAYLOAD_PREFIX = "Win7WeatherGadget-Portable/Gadget/Weather.gadget/"
 STAGE = os.path.join(DIST, "stage")
 STAGE_GADGET = os.path.join(STAGE, "gadget", "Weather.gadget")
 
@@ -63,6 +71,7 @@ ROOT_LOCALE = "en-US"
 UTF16_EXTENSIONS = (".js", ".html", ".css")
 
 REQUIRED_PROJECT_FILES = [
+    "src/localization-en-US.json",
     "installer/Setup.iss",
     "installer/README.txt",
     "scripts/Launch.cmd",
@@ -94,8 +103,9 @@ def _read(path, mode="r", **kwargs):
 
 def set_dist(path):
     """Changes the output folder (used by the tests)."""
-    global DIST, STAGE, STAGE_GADGET
+    global DIST, SRC, STAGE, STAGE_GADGET
     DIST = path
+    SRC = os.path.join(DIST, "source", "Weather.gadget")
     STAGE = os.path.join(DIST, "stage")
     STAGE_GADGET = os.path.join(STAGE, "gadget", "Weather.gadget")
 
@@ -118,12 +128,135 @@ def read_version():
 
 
 # ---------------------------------------------------------------------------
-# 1. validation
+# 1. source assembly and validation
 # ---------------------------------------------------------------------------
 
+def obtain_payload(explicit=None):
+    """Return the pinned release ZIP used as the binary-only vendor baseline."""
+    supplied = explicit or os.environ.get("W7WEATHER_PAYLOAD_ZIP")
+    if supplied:
+        path = os.path.abspath(supplied)
+        if not os.path.isfile(path):
+            raise BuildError("payload ZIP not found: " + path)
+    else:
+        path = PAYLOAD_CACHE
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        valid_cache = False
+        if os.path.isfile(path):
+            valid_cache = hashlib.sha256(_read(path, "rb")).hexdigest() == PAYLOAD_SHA256
+        if not valid_cache:
+            try:
+                from urllib.request import Request, urlopen
+                request = Request(PAYLOAD_URL, headers={"User-Agent": "Win7WeatherGadget-build/1.0"})
+                with urlopen(request, timeout=60) as response, open(path + ".tmp", "wb") as target:
+                    shutil.copyfileobj(response, target)
+                os.replace(path + ".tmp", path)
+            except Exception as exc:
+                try:
+                    os.remove(path + ".tmp")
+                except OSError:
+                    pass
+                raise BuildError("cannot download the pinned v1.0.0 portable payload: %s" % exc)
+    digest = hashlib.sha256(_read(path, "rb")).hexdigest()
+    if digest != PAYLOAD_SHA256:
+        raise BuildError("portable payload SHA-256 mismatch: " + digest)
+    return path
+
+
+def assemble_source(payload_zip=None):
+    """Unpack the released gadget as the vendor baseline and overlay our files."""
+    global SRC
+    archive = obtain_payload(payload_zip)
+    if os.path.isdir(SRC):
+        shutil.rmtree(SRC)
+    os.makedirs(SRC, exist_ok=True)
+    expected = set()
+    try:
+        with zipfile.ZipFile(archive) as zf:
+            for info in zf.infolist():
+                name = info.filename
+                if not name.startswith(PAYLOAD_PREFIX) or info.is_dir():
+                    continue
+                relpath = name[len(PAYLOAD_PREFIX):]
+                parts = relpath.replace("\\", "/").split("/")
+                if not relpath or any(part in ("", ".", "..") for part in parts):
+                    raise BuildError("unsafe path in portable payload: " + name)
+                target = os.path.join(SRC, *parts)
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                data = zf.read(info)
+                if relpath.lower().endswith(UTF16_EXTENSIONS):
+                    if data.startswith(b"\xff\xfe"):
+                        text = data[2:].decode("utf-16-le")
+                    elif data.startswith(b"\xfe\xff"):
+                        text = data[2:].decode("utf-16-be")
+                    else:
+                        text = data.decode("utf-8")
+                    text = text.replace("\r\n", "\n").replace("\r", "\n")
+                    data = text.encode("utf-8")
+                with open(target, "wb") as fh:
+                    fh.write(data)
+                expected.add(relpath)
+    except (OSError, zipfile.BadZipFile, UnicodeError) as exc:
+        raise BuildError("cannot assemble gadget from portable payload: %s" % exc)
+
+    if "gadget.xml" not in expected or "js/weather.js" not in expected or len(expected) < 150:
+        raise BuildError("pinned portable payload is missing the gadget source tree")
+
+    for path in iter_files(OVERLAY_SRC):
+        relpath = os.path.relpath(path, OVERLAY_SRC)
+        target = os.path.join(SRC, relpath)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        shutil.copyfile(path, target)
+    apply_english_overrides()
+    log("assembled gadget from pinned release payload plus %d project overlay files" %
+        sum(1 for _ in iter_files(OVERLAY_SRC)))
+
+
+def apply_english_overrides():
+    """Apply project-owned English additions without vendoring Microsoft's table."""
+    path = os.path.join(SRC, "js", "localizedStrings.js")
+    overrides_path = os.path.join(ROOT, "src", "localization-en-US.json")
+    try:
+        with io.open(overrides_path, encoding="utf-8") as fh:
+            values = json.load(fh)
+    except (OSError, ValueError) as exc:
+        raise BuildError("cannot read project English localization overrides: %s" % exc)
+    text = _read(path, encoding="utf-8")
+    lines = text.splitlines()
+    missing = []
+    for key, value in values.items():
+        if not isinstance(value, str):
+            raise BuildError("English localization override %s must be text" % key)
+        key_re = re.compile(r"^\s*L_localizedStrings_Text\[\s*['\"]%s['\"]\s*\]" % re.escape(key))
+        replacement = "L_localizedStrings_Text['%s'] = %s;" % (
+            key, json.dumps(value, ensure_ascii=False))
+        found = False
+        for index, line in enumerate(lines):
+            if key_re.match(line):
+                lines[index] = replacement
+                found = True
+                break
+        if not found:
+            missing.append(replacement)
+    if missing:
+        marker = next((i for i, line in enumerate(lines) if re.match(r"^var\s+LOCNAME_ARRAY\b", line)), None)
+        if marker is None:
+            raise BuildError("English localization table has no LOCNAME_ARRAY insertion point")
+        lines[marker:marker] = missing
+    with io.open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
 def validate_sources():
+
     missing = [f for f in REQUIRED_PROJECT_FILES if not os.path.isfile(os.path.join(ROOT, f))]
     missing.extend(f for f in REQUIRED_GADGET_FILES if not os.path.isfile(os.path.join(SRC, f)))
+    overlay_required = ["js/wlservices_shim.js"]
+    for loc in LOCALES:
+        if loc != ROOT_LOCALE:
+            overlay_required.extend((loc + "/gadget.xml", loc + "/js/localizedStrings.js"))
+    missing.extend(os.path.relpath(os.path.join(OVERLAY_SRC, f), ROOT).replace(os.sep, "/")
+                   for f in overlay_required if not os.path.isfile(os.path.join(OVERLAY_SRC, f)))
     for loc in LOCALES:
         if loc == ROOT_LOCALE:
             continue
@@ -147,7 +280,8 @@ def validate_sources():
             except UnicodeDecodeError as exc:
                 raise BuildError("%s is not valid UTF-8: %s" % (rel(path), exc))
     # Key parity and format of the 20 localizations (fails on any missing key).
-    proc = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "check_localization.py"), "--quiet"])
+    proc = subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "check_localization.py"),
+                           "--gadget", SRC, "--quiet"])
     if proc.returncode != 0:
         raise BuildError("localization check failed")
     log("sources OK (%d locales)" % len(LOCALES))
@@ -398,6 +532,7 @@ def main():
                         help="fail when ISCC is not available")
     parser.add_argument("--iscc", help="ISCC command (path, or e.g. 'wine C:\\IS6\\ISCC.exe')")
     parser.add_argument("--dist", help="output folder (default: dist)")
+    parser.add_argument("--payload-zip", help="use a local copy of the pinned portable ZIP as the gadget baseline")
     parser.add_argument("--app-url", default=os.environ.get("APP_URL", ""),
                         help="project URL shown by the installer (AppPublisherURL)")
     args = parser.parse_args()
@@ -407,8 +542,9 @@ def main():
     try:
         version = read_version()
         log("version %s" % version)
-        validate_sources()
         os.makedirs(DIST, exist_ok=True)
+        assemble_source(args.payload_zip)
+        validate_sources()
         stage_gadget()
         stage_extras()
         build_gadget_archive()

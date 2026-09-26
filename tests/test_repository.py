@@ -34,7 +34,8 @@ from unittest import mock
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "src", "Weather.gadget")
+# Reconstructed from the hash-pinned v1.0.0 portable asset by the build step.
+SRC = os.path.join(ROOT, "dist", "source", "Weather.gadget")
 LOCALES = [
     "en-US", "it-IT", "de-DE", "fr-FR", "es-ES", "pt-BR", "nl-NL", "pl-PL",
     "ru-RU", "ja-JP", "ko-KR", "zh-CN", "zh-TW", "tr-TR", "sv-SE", "nb-NO",
@@ -90,10 +91,24 @@ def run_checker(gadget_dir):
 
 class RepositoryTests(unittest.TestCase):
 
+    def test_repository_keeps_only_project_gadget_overlays(self):
+        overlay = os.path.join(ROOT, "src", "Weather.gadget")
+        original = json.load(io.open(os.path.join(ROOT, "tests", "fixtures", "original-gadget-hashes.json"), encoding="utf-8"))["files"]
+        actual = set()
+        for directory, _, files in os.walk(overlay):
+            for name in files:
+                actual.add(os.path.relpath(os.path.join(directory, name), overlay).replace(os.sep, "/"))
+        expected = {path for path in actual if path not in original} | {"js/wlservices_shim.js"}
+        self.assertEqual(expected, actual)
+        self.assertNotIn("images", os.listdir(overlay))
+        self.assertFalse(os.path.exists(os.path.join(overlay, "js", "weather.js")))
+        self.assertFalse(os.path.exists(os.path.join(overlay, "css")))
+        self.assertLess(sum(os.path.getsize(os.path.join(overlay, *p.split("/"))) for p in actual), 500_000)
+
     def test_required_files(self):
-        for rel in ["README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "VERSION", ".gitignore",
+        for rel in ["README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "VERSION", "src/localization-en-US.json", ".gitignore",
                     ".gitattributes", "package.json", "package-lock.json",
-                    "installer/Setup.iss", "installer/README.txt", "installer/README.it.txt", "installer/icon.ico",
+                    "installer/Setup.iss", "installer/README.txt", "installer/README.it.txt",
                     "scripts/build.py", "scripts/check_localization.py", "scripts/run_tests.py",
                     "scripts/Install.cmd", "scripts/Uninstall.cmd", "scripts/Diagnostics.cmd",
                     "scripts/Launch.cmd", "scripts/Remove.cmd", "portable/README.txt",
@@ -145,8 +160,7 @@ class RepositoryTests(unittest.TestCase):
                 offenders.append(rel)
         for rel in ["installer/Setup.iss", "scripts/build.py", "scripts/tools/CleanGadgetSettings.ps1",
                     "scripts/tools/Diagnostics.ps1", "scripts/Install.cmd", "scripts/Uninstall.cmd",
-                    "scripts/Launch.cmd", "scripts/Remove.cmd", "installer/legacy/InstallWizard.ps1",
-                    "installer/legacy/launcher.c"]:
+                    "scripts/Launch.cmd", "scripts/Remove.cmd"]:
             text = read_text(os.path.join(ROOT, rel), encoding="utf-8-sig")
             if pattern.search(text):
                 offenders.append(rel)
@@ -385,10 +399,12 @@ class InstallerTests(unittest.TestCase):
     def test_all_languages_referenced(self):
         lang_dir = os.path.join(ROOT, "installer", "Languages")
         files = sorted(f for f in os.listdir(lang_dir) if f.endswith((".isl", ".islu")))
-        refs = re.findall(r"Languages\\([A-Za-z]+\.islu?)", self.iss)
-        self.assertEqual(77, len(files))
-        self.assertEqual(sorted(files), sorted(set(refs)))
-        self.assertEqual(len(refs), len(set(refs)), "each language once")
+        refs = re.findall(r"compiler:Languages\\([A-Za-z]+\.islu?)", self.iss)
+        self.assertEqual([], files, "standard Inno languages come from the pinned compiler")
+        self.assertEqual(77, len(refs))
+        self.assertEqual(len(refs), len(set(refs)), "each standard language once")
+        self.assertTrue(all(os.path.isfile(os.path.join(ROOT, "installer", "Languages", "Custom", f))
+                            for f in os.listdir(os.path.join(lang_dir, "Custom"))))
         custom = sorted(os.listdir(os.path.join(lang_dir, "Custom")))
         custom_refs = set(re.findall(r"Languages\\Custom\\([A-Za-z]+\.isl)", self.iss))
         self.assertEqual(20, len(custom))
@@ -404,6 +420,13 @@ class InstallerTests(unittest.TestCase):
 
 
 class ReleasePackagingTests(unittest.TestCase):
+
+    def test_build_bootstraps_from_the_pinned_portable_release(self):
+        build = load_build_module()
+        self.assertIn("/releases/download/v1.0.0/Win7WeatherGadget-Portable.zip", build.PAYLOAD_URL)
+        self.assertEqual(64, len(build.PAYLOAD_SHA256))
+        workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")
+        self.assertIn("python scripts/build.py --require-installer", workflow)
 
     def test_workflow_releases_only_the_two_named_files(self):
         workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")

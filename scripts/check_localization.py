@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Validates the gadget and installer localizations.
 
-The English master file is src/Weather.gadget/js/localizedStrings.js (the
-gadget root is also the fallback for every Windows display language without its
-own folder). For each of the 19 other supported languages the script checks:
+By default the English master file is read from dist/source/Weather.gadget,
+which scripts/build.py reconstructs from the pinned release payload and the
+project's source overlays. For each of the 19 other supported languages the
+script checks:
 
 * the locale folder exists with gadget.xml and js/localizedStrings.js;
 * every English key is present, with no duplicates and no unknown extra keys;
@@ -249,7 +250,7 @@ def check_installer(custom_dir, errors):
 
 def main():
     parser = argparse.ArgumentParser(description="Validate the gadget and installer localizations.")
-    parser.add_argument("--gadget", default=os.path.join(ROOT, "src", "Weather.gadget"))
+    parser.add_argument("--gadget", default=os.path.join(ROOT, "dist", "source", "Weather.gadget"))
     parser.add_argument("--installer-custom", default=os.path.join(ROOT, "installer", "Languages", "Custom"))
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args()

@@ -11,8 +11,8 @@
 // so the tests are deterministic and work offline. The integration test can
 // switch to real HTTPS requests with --online.
 //
-// Gadget folder: src/Weather.gadget by default (UTF-8), or the staged build
-// (UTF-16LE with BOM) with --gadget <dir> or the GADGET_DIR variable.
+// Gadget folder: reconstructed dist/source by default after a build (UTF-8),
+// or an explicit folder via --gadget / GADGET_DIR.
 ////////////////////////////////////////////////////////////////////////////////
 
 const fs = require('fs');
@@ -34,8 +34,9 @@ function argValue(name) {
 }
 
 function gadgetDir() {
-  return path.resolve(argValue('--gadget') || process.env.GADGET_DIR ||
-                      path.join(REPO, 'src', 'Weather.gadget'));
+  const assembled = path.join(REPO, 'dist', 'source', 'Weather.gadget');
+  const fallback = fs.existsSync(assembled) ? assembled : path.join(REPO, 'src', 'Weather.gadget');
+  return path.resolve(argValue('--gadget') || process.env.GADGET_DIR || fallback);
 }
 
 // Reads a gadget text file in either repository (UTF-8) or packaged

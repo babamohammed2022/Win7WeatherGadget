@@ -1,13 +1,14 @@
 # Changes to Microsoft's Weather gadget
 
-This document lists every difference between Microsoft's Windows 7 Weather
-gadget and the gadget in `src/Weather.gadget/`. Anything not listed here is
-Microsoft's file, unchanged. The test `tests/test_repository.py`
-(`PreservationTests`) compares all 165 files of the source archive with
-`tests/fixtures/original-gadget-hashes.json` and fails if an unlisted file changes.
+This document records the Microsoft-derived changes present in the v1.0.0
+release gadget. The repository keeps project-authored overlays, not a second
+copy of the full gadget source. The build reconstructs the v1.0.0 baseline from
+the checksum-pinned portable release asset under `dist/source/Weather.gadget/`
+and overlays the project's files from `src/Weather.gadget/`.
 
-Line numbers refer to the files in this repository. Every patch in Microsoft's
-code is marked with a `// PATCH (Windows 10/11 port):` comment.
+The reference-hash test compares the assembled baseline with
+`tests/fixtures/original-gadget-hashes.json`, allowing only the documented
+changes and project-authored shim.
 
 ## Provenance
 
@@ -106,8 +107,8 @@ case-insensitive aliases, HTTP transport). The differences:
 
 ## Encoding
 
-Microsoft's files are UTF-16LE with BOM. The repository stores them as UTF-8
-(readable diffs) and `scripts/build.py` converts `.js`, `.html` and `.css` back
-to UTF-16LE with BOM and CRLF line endings when packaging. `gadget.xml` stays
-UTF-8, as in the original. The tests check that the conversion does not change
-the text.
+The released gadget stores its `.js`, `.html` and `.css` files as UTF-16LE with
+BOM and CRLF. During a build, `scripts/build.py` reconstructs a readable UTF-8
+working tree in ignored `dist/source/`, overlays project files, then stages
+those text files back to UTF-16LE with BOM and CRLF. `gadget.xml` stays UTF-8.
+Tests compare the reconstructed tree against the preserved reference hashes.

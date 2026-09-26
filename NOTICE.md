@@ -1,111 +1,46 @@
 # NOTICE
 
-This file records where the content of this repository comes from, who owns
-it and under which terms, so that anyone using or redistributing it knows what
-is whose.
+This notice distinguishes project-authored files from material in the distributed gadget and third-party tools. Attribution is not a license grant or a statement of authorization.
 
-## 1. The Weather gadget: Microsoft Corporation
+## Microsoft Windows 7 Weather gadget
 
-The following files in `src/Weather.gadget/` are **Microsoft's Windows 7
-Weather gadget** (manifest: version 1.1.0.0, author *Microsoft Corporation*,
-© 2009):
+The complete Weather gadget included in `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip` is derived from Microsoft's Windows 7 Weather gadget (manifest version 1.1.0.0, author Microsoft Corporation, © 2009). Microsoft copyright notices in the packaged files are retained.
 
-- `weather.html`, `settings.html`, `gadget.xml`, `icon.png`, `logo.png`, `drag.png`;
-- all of `css/`;
-- all of `js/` **except** `js/wlservices_shim.js`;
-- all 150 files in `images/`, including the `120DPI/` and `144DPI/` variants;
-- `it-IT/gadget.xml` and the Italian strings in `it-IT/js/localizedStrings.js`;
-- the key names, layout and `LOCNAME_ARRAY` of every `localizedStrings.js`.
+To avoid keeping a duplicate copy of the large gadget payload in the current source tree, this repository stores the project's own overlays, localization files, build scripts, tests, and documentation. The build obtains its baseline from the public v1.0.0 portable release asset, verifies a pinned SHA-256, then applies the project overlays. The MediaFire archive is cited only as an original source/reference; it is not required by the build or installer.
 
-`installer/icon.ico` (also embedded in `installer/legacy/icon_data.h`) comes
-from the source package, which did not document it; it shows the gadget's sun
-image and is treated as derived from Microsoft's artwork.
+The release package contains Microsoft-derived code and artwork. Its inclusion and attribution do not establish a redistribution license, Microsoft authorization, affiliation, or endorsement. This is an unofficial community project and is not affiliated with or endorsed by Microsoft. The project's MIT license does not relicense Microsoft's material.
 
-Microsoft's files are unchanged except for the small patches listed in
-[docs/PATCHES.md](docs/PATCHES.md).
+The source archive described the gadget as "recovered from a public Windows 7 gadget archive." The exact original source could not be independently verified, and pristine Microsoft files were not independently available for comparison. The changes made for this project are documented in [docs/PATCHES.md](docs/PATCHES.md).
 
-**Provenance.** The reviewed reference bundle states that the gadget was
-"recovered from a public Windows 7 gadget archive". The exact original source
-could not be independently verified and Microsoft's pristine files were not
-available for comparison. These files are **not** covered by this project's
-license (see section 7). Microsoft's copyright notices (for example in
-`localizedStrings.js` and the manifests) are kept. Redistribution rights are
-unverified; see the publication hold in section 1A.
+## Project-authored files
 
-## 1A. Microsoft copyright and attribution
+- `src/Weather.gadget/js/wlservices_shim.js`: replaces the retired `wlsrvc.WLServices` ActiveX weather service with Open-Meteo and BigDataCloud calls, using the interface expected by the gadget.
+- `src/Weather.gadget/<locale>/`: project-maintained locale manifests and translations for the supported non-English languages.
+- `installer/Setup.iss`, the custom installer translations in `installer/Languages/Custom/`, scripts, tests, workflow, and documentation.
 
-The supplied reference bundle identifies the original gadget files as Microsoft
-Windows 7 Weather gadget material, © 2009 Microsoft Corporation. Original
-Microsoft copyright notices remain in the files. The project's MIT license
-applies only to project-authored contributions; it does not relicense or replace
-Microsoft's rights in the original gadget code and artwork.
+The full gadget source tree is reconstructed temporarily under the ignored `dist/` directory from the pinned release payload. It is not checked into the current source tree.
 
-This is an unofficial community project and is not affiliated with or endorsed
-by Microsoft. The appearance of similar Microsoft gadget materials in other
-third-party packages is not presented as a license or endorsement for this
-project.
-## 2. Files written for this project
+## Inno Setup
 
-- `src/Weather.gadget/js/wlservices_shim.js`: replaces the `wlsrvc.WLServices`
-  ActiveX control, whose service (`weather.service.msn.com`) no longer exists.
-  It implements the interface the gadget expects using Open-Meteo and
-  BigDataCloud. It contains no Microsoft code.
-- The translations in the 18 new locale folders (`de-DE`, `fr-FR`, `es-ES`,
-  `pt-BR`, `nl-NL`, `pl-PL`, `ru-RU`, `ja-JP`, `ko-KR`, `zh-CN`, `zh-TW`,
-  `tr-TR`, `sv-SE`, `nb-NO`, `da-DK`, `fi-FI`, `cs-CZ`, `hu-HU`) and the keys
-  added to the English and Italian files (their structure follows Microsoft's
-  file, see section 1).
-- `installer/Setup.iss`, `installer/README*.txt`, `installer/Languages/Custom/*.isl`.
-- `installer/legacy/launcher.c`, `installer/legacy/InstallWizard.ps1` (earlier
-  installer from the source package, kept for reference).
-- `scripts/*`, `tests/*`, `.github/workflows/*`, the documentation.
+The installer uses Inno Setup 6.7.3. Standard installer language files are referenced from the Inno Setup compiler installation and are not vendored in this repository. The project's custom installer translations are in `installer/Languages/Custom/`.
 
-## 3. Inno Setup translations: Jordan Russell and contributors
+The setup and uninstaller programs embedded in the setup executable are © Jordan Russell and Martijn Laan and are distributed under the Inno Setup license: <https://jrsoftware.org/files/is/license.txt>.
 
-The 77 `.isl` / `.islu` files in `installer/Languages/` are the official and
-community translations distributed with **Inno Setup**
-(<https://jrsoftware.org/isinfo.php>). They are vendored unmodified, so the
-build does not depend on which translations are installed with Inno Setup.
-Their authors are named in each file. Inno Setup's license
-(<https://jrsoftware.org/files/is/license.txt>) applies to them. Keep this
-notice when redistributing them.
+## Weather data
 
-The installer is compiled with Inno Setup; the setup and uninstaller programs
-embedded in `Win7WeatherGadget-Setup.exe` are © Jordan Russell and
-Martijn Laan and distributed under the Inno Setup license.
+- [Open-Meteo](https://open-meteo.com/): forecasts and geocoding. The service's data is licensed under CC BY 4.0; the gadget displays localized attribution to Open-Meteo.
+- [BigDataCloud](https://www.bigdatacloud.com/): reverse geocoding (free client-side API).
 
-## 4. Weather data
+No service data is stored in this repository apart from recorded test fixtures in `tests/fixtures/`.
 
-- [Open-Meteo](https://open-meteo.com/): forecasts and geocoding. The data
-  is licensed under CC BY 4.0; the gadget shows the attribution
-  "Data: Open-Meteo.com" (localized).
-- [BigDataCloud](https://www.bigdatacloud.com/): reverse geocoding (free
-  client-side API).
+## Optional third-party gadget runtime
 
-No data from these services is stored in this repository, except the
-responses recorded as test fixtures in `tests/fixtures/`.
+The installer and `Install.cmd -host` can download the Desktop Gadgets runtime from Gadgets Revived only when the user explicitly requests it. The download is checked against a pinned SHA-256 before it is run. The runtime is a separate program and is not bundled with this project. 8GadgetPack is another separate runtime option.
 
-## 5. Third-party software the installer can download
+## Test-only npm dependencies
 
-The installer and `Install.cmd -host` can download the **Desktop Gadgets**
-runtime from `gadgetsrevived.com`, **only when the user explicitly asks for it**.
-The download is checked against a pinned SHA-256 checksum before it is run.
-It is a separate program with its own license; nothing from it is included in
-this repository. [8GadgetPack](https://gadgetpack.net/) is supported as an
-alternative runtime and is also a separate program.
+`package.json` uses Acorn and acorn-walk only for JavaScript validation tests. They are development dependencies, fetched by `npm ci`, and are not copied into either release package. Both are distributed under the MIT license; their notices are included with their npm packages.
 
-## 6. Test-only npm dependencies
+## License of project files
 
-`package.json` uses Acorn and acorn-walk only for JavaScript validation tests.
-They are development dependencies, are fetched by `npm ci`, and are not copied
-into the installer or portable package. Both packages are distributed under
-the MIT license; their license notices are included with their npm packages.
-
-## 7. License of this project's own files
-
-The files listed in section 2 are released under the [MIT License](LICENSE).
-This follows the package this project started from, which stated that its own
-files should be treated as MIT-licensed while Microsoft's files are not.
-
-The MIT License does **not** apply to the Microsoft files in section 1 or to
-the Inno Setup translations in section 3.
+The project's own files are licensed under the [MIT License](LICENSE). That license does not cover Microsoft-derived gadget material, the optional runtime, or third-party components. See the notices above and the licenses of those components.

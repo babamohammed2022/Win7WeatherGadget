@@ -31,17 +31,19 @@ Windows 10 and Windows 11 require a separate Windows Sidebar-compatible gadget r
 
 ## Building from Source
 
-Requirements: Python 3.8+, Node.js 18+ for tests, and Inno Setup 6 to compile the installer.
+Requirements: Python 3.8+, Node.js 18+ for tests, Inno Setup 6 to compile the installer, and internet access to fetch the pinned v1.0.0 portable package used as the binary gadget baseline.
+
+The repository keeps the project's own overlays, scripts, tests, and documentation rather than a duplicate copy of Microsoft's full gadget payload. The Windows installer and portable release assets still contain the complete gadget. Builds fetch the public v1.0.0 portable asset and verify its SHA-256 before applying the project's overlays; the MediaFire archive is only a source reference and is not a build dependency.
 
 ```bat
 npm ci
-npm test
-python -m unittest discover -s tests -v
-python scripts\check_localization.py
 python scripts\build.py --require-installer
+python scripts\check_localization.py --gadget dist\source\Weather.gadget
+python -m unittest discover -s tests -v
+npm test
 ```
 
-Build artifacts are written to `dist/`. See [docs/BUILD.md](docs/BUILD.md) for details.
+Build artifacts and the reconstructed source tree are written to the ignored `dist/` folder. See [docs/BUILD.md](docs/BUILD.md) for details.
 
 ## Original Source
 
@@ -49,7 +51,7 @@ Original source/reference archive: <https://www.mediafire.com/file/qluqkiztg401b
 
 ## Credits
 
-The project retains and adapts Microsoft Windows 7 Weather gadget materials and includes Inno Setup translation files. See [NOTICE.md](NOTICE.md) for provenance and third-party notices.
+The public source tree contains the project's code and translations; the downloadable setup and portable packages include the complete Weather gadget. See [NOTICE.md](NOTICE.md) for provenance and third-party notices.
 
 ## License
 

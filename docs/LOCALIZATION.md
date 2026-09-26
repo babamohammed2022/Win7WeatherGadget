@@ -4,8 +4,8 @@ The project has two independent sets of languages:
 
 | | Languages | Files |
 |---|---|---|
-| **Gadget interface** | 20 | `src/Weather.gadget/js/localizedStrings.js` (English) and `src/Weather.gadget/<ll-CC>/` |
-| **Installer wizard** | 78 | `installer/Languages/*.isl` (Inno Setup) and `installer/Languages/Custom/*.isl` (this installer's own messages, 20 languages) |
+| **Gadget interface** | 20 | The English master comes from the pinned release baseline plus `src/localization-en-US.json`; non-English project overlays are in `src/Weather.gadget/<ll-CC>/` |
+| **Installer wizard** | 78 | Standard languages supplied by the pinned Inno Setup compiler, plus `installer/Languages/Custom/*.isl` (this installer's messages, 20 languages) |
 
 ## How the gadget picks its language
 
@@ -37,7 +37,7 @@ Celsius (see the known issues in the README).
 
 | Folder | Language | Notes |
 |---|---|---|
-| (root) | English (United States) | master file and fallback; Microsoft's strings plus the new keys; `DefaultUnit` = Fahrenheit |
+| (root) | English (United States) | master file and fallback reconstructed from the pinned release baseline plus project key overrides; `DefaultUnit` = Fahrenheit |
 | `it-IT` | Italian | Microsoft's Italian strings from the source archive, completed |
 | `de-DE` | German | new |
 | `fr-FR` | French | new |
@@ -62,8 +62,10 @@ The new translations were written for this project. Native-speaker review is wel
 
 ## The keys
 
-`js/localizedStrings.js` defines `L_localizedStrings_Text[key]` (80 keys) and
-`LOCNAME_ARRAY`. Groups:
+The assembled English `js/localizedStrings.js` defines
+`L_localizedStrings_Text[key]` (80 keys) and `LOCNAME_ARRAY`. Project-authored
+English additions and overrides are stored in `src/localization-en-US.json` and
+merged into the pinned baseline by the build. Groups:
 
 | Keys | Used by | Notes |
 |---|---|---|
@@ -108,8 +110,8 @@ that texts are actually translated, and the folder lookup.
 
 ## File format
 
-- Repository: UTF-8 **without** BOM, LF line endings. The build converts to
-  UTF-16LE with BOM and CRLF (the original gadget's format).
+- Project overlays: UTF-8 **without** BOM, LF line endings. The build converts
+  gadget text to UTF-16LE with BOM and CRLF (the original gadget's format).
 - One definition per line: `L_localizedStrings_Text['Key'] = 'text';`
 - Single quotes; escape `'` as `\'`. Use `\n` for a line break.
 - Keep the key order of the English file.
@@ -121,22 +123,21 @@ that texts are actually translated, and the folder lookup.
 2. Keep the texts short: the gadget is small. The longest texts are the
    condition (up to about 30 characters fit on one line in the large view) and
    the day names (one column each in the large view).
-3. Run `python scripts/check_localization.py` and `npm test`.
+3. Build first to reconstruct the baseline, then run `python scripts/check_localization.py --gadget dist/source/Weather.gadget` and `npm test`.
 
 To add a **new language**, also add it to `LOCALES` in
 `scripts/check_localization.py`, `scripts/build.py`, `tests/js/helpers.cjs`
 and `tests/test_repository.py`, and to the table in `README.md`. To add a
-**new key**, add it to the English file first, then to all 19 other files: the
-check fails until every language has it.
+**new key**, add the English value to `src/localization-en-US.json` and the
+translation to all 19 non-English locale files; the check fails until every
+language has it.
 
 ## Installer messages
 
-`installer/Languages/Custom/<Language>.isl` contains the messages specific to
-this installer (the gadget runtime page) in the 20 gadget languages. For
-the other 58 wizard languages the English file is used. The files are
-UTF-8 with BOM and CRLF (`.gitattributes` keeps them byte-exact). `%n` is a
-line break.
+`installer/Languages/Custom/<Language>.isl` contains this installer’s custom
+messages (including the runtime page) in the 20 gadget languages. For the other
+58 wizard languages English custom messages are used. The files are UTF-8 with
+BOM and CRLF (`.gitattributes` keeps them byte-exact); `%n` is a line break.
 
-The 77 files in `installer/Languages/` are Inno Setup's official and community
-translations, vendored unmodified so the build does not depend on which
-translations are installed with Inno Setup.
+Standard wizard translations are referenced from the pinned Inno Setup 6.7.3
+compiler installation and are not duplicated in this repository.

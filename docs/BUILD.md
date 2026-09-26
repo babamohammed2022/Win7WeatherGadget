@@ -4,9 +4,12 @@
 
 | Tool | Version | Needed for |
 |---|---|---|
-| Python | 3.8 or newer (standard library only) | build, localization check, Python tests |
-| Inno Setup | 6.3 or newer, tested with **6.7.3** | the installer (`ISCC.exe`) |
-| Node.js | 18 or newer | JavaScript tests only |
+| Python | 3.8 or newer (standard library only) | source assembly, build, localization check, Python tests |
+| Inno Setup | 6.7.3 (pinned in CI) | compiling the installer (`ISCC.exe`) and supplying the standard installer languages |
+| Node.js | 18 or newer | JavaScript tests |
+| Internet access | GitHub release asset | downloading the pinned gadget baseline |
+
+The source repository intentionally keeps the project's own gadget overlays rather than a duplicate copy of Microsoft's full gadget payload. The build assembles `dist/source/Weather.gadget` from the portable ZIP of the published v1.0.0 release, verifies its fixed SHA-256, and overlays the project-owned files from `src/Weather.gadget/`. This uses the project's GitHub release, not the MediaFire reference archive. The built installer and portable package contain the complete gadget.
 
 ## Build
 
@@ -16,19 +19,23 @@ python scripts\build.py
 
 Steps:
 
-1. check the source tree (required files, 20 locales, `VERSION`) and run
-   `scripts/check_localization.py`: **any missing translation key stops the build**;
-2. stage the gadget into `dist\stage\gadget\Weather.gadget`, converting `.js`,
-   `.html` and `.css` from UTF-8 to UTF-16LE with BOM and CRLF;
-3. create `dist\Weather.gadget` (ZIP, `gadget.xml` at the root, no folder entries);
-4. create `dist\Win7WeatherGadget-Portable.zip` (runtime files, launcher, removal helper, and end-user guide);
-5. compile `installer\Setup.iss` into `dist\Win7WeatherGadget-Setup.exe`
-   when ISCC is found;
-6. verify the outputs and write `dist\SHA256SUMS.txt`.
+1. fetch the pinned v1.0.0 portable release asset (or use a provided local copy) and verify its SHA-256;
+2. reconstruct the gadget source under `dist\source\Weather.gadget` and apply the project's overlays;
+3. validate required files, the 20 gadget locales, and `VERSION`;
+4. stage the gadget into `dist\stage\gadget\Weather.gadget`, converting `.js`, `.html` and `.css` to UTF-16LE with BOM and CRLF;
+5. create `dist\Weather.gadget` and `dist\Win7WeatherGadget-Portable.zip`;
+6. compile `installer\Setup.iss` into `dist\Win7WeatherGadget-Setup.exe` when ISCC is found;
+7. verify the outputs and write `dist\SHA256SUMS.txt`.
 
-The two archives are reproducible: files are sorted, timestamps are fixed
-(1 January 2010, or `SOURCE_DATE_EPOCH`), permissions are normalized. The EXE
-contains build timestamps and differs between builds.
+The portable ZIP used as the baseline is pinned in `scripts/build.py` by both a fixed v1.0.0 URL and SHA-256. To use an already-downloaded copy:
+
+```bat
+python scripts\build.py --payload-zip C:\path\Win7WeatherGadget-Portable.zip
+```
+
+The file must match the pinned hash. `W7WEATHER_PAYLOAD_ZIP` can be used instead of `--payload-zip`. The build never downloads from MediaFire.
+
+The generated archives are reproducible: files are sorted, timestamps are fixed (1 January 2010, or `SOURCE_DATE_EPOCH`), and permissions are normalized. The EXE contains build timestamps and differs between builds.
 
 ### Options
 
@@ -37,12 +44,13 @@ contains build timestamps and differs between builds.
 | `--skip-installer` | do not run ISCC |
 | `--require-installer` | fail if ISCC is not found (used by CI) |
 | `--iscc <command>` | ISCC command; otherwise the `ISCC` variable, `PATH`, then the default Inno Setup 6 folders are tried |
-| `--app-url <url>` | project URL shown by the installer (also the `APP_URL` variable); default `https://github.com/` |
+| `--app-url <url>` | project URL shown by the installer (also the `APP_URL` variable) |
+| `--payload-zip <file>` | use a local copy of the pinned portable payload |
 | `--dist <folder>` | output folder (default `dist`) |
 
 ### Compiling the installer by hand
 
-After a build (which creates `dist\stage`):
+Run a build first; it creates `dist\stage` and the reconstructed gadget tree:
 
 ```bat
 "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\Setup.iss
@@ -50,10 +58,9 @@ After a build (which creates `dist\stage`):
 
 `Setup.iss` reads the version from `VERSION`. Optional defines:
 `/DMyAppVersion=x.y.z`, `/DMyAppURL=https://…`, `/DStageDir=<staging folder>`.
+The standard installer language files are referenced from the pinned Inno Setup compiler; only the project's custom translations are stored in this repository.
 
 ### Linux (Wine)
-
-The installer can also be compiled with Wine:
 
 ```bash
 export WINEPREFIX=$HOME/.wine-inno
@@ -61,15 +68,18 @@ wine innosetup-6.7.3.exe /VERYSILENT /SUPPRESSMSGBOXES /DIR='C:\IS6'
 python3 scripts/build.py --require-installer --iscc 'wine C:\IS6\ISCC.exe'
 ```
 
-Paths are converted with `winepath`. The primary supported and continuously tested build environment is `windows-latest` in GitHub Actions; this optional Wine path is not exercised by the current build workflow.
+Paths are converted with `winepath`. The primary supported build environment is `windows-latest` in GitHub Actions; this optional Wine path is not exercised by the workflow.
 
 ## Tests
 
+Build once before running repository tests; this creates the reconstructed source tree used by the localization and preservation checks.
+
 ```bat
 npm ci
-npm test                                   :: JavaScript tests (offline)
-python -m unittest discover -s tests -v    :: repository, localization, build, installer
-python scripts\check_localization.py       :: localization report
+python scripts\build.py --require-installer
+python scripts\check_localization.py --gadget dist\source\Weather.gadget
+python -m unittest discover -s tests -v
+npm test
 ```
 
 The JavaScript tests can run against the packaged files too:
@@ -80,35 +90,24 @@ node tests\js\run_all.cjs --gadget dist\stage\gadget\Weather.gadget
 
 | Test | What it checks |
 |---|---|
-| `tests/js/test_syntax.cjs` | every gadget script (and the inline scripts of the HTML pages) parses as ES3 and avoids constructs old JScript rejects (trailing commas, reserved words as property names; ES5 methods in the shim); script references and load order; the checker itself rejects invalid code |
-| `tests/js/test_localization.cjs` | runs each `localizedStrings.js`; key parity, `LOCNAME_ARRAY` length, day names, translated texts, `getLocalizedString` fallback, folder lookup with English fallback |
-| `tests/js/test_shim.cjs` | the shim offline: weather-code mapping and icons, localized texts and English fallback, COM aliases, requests (Fahrenheit, language codes, User-Agent), results, errors |
-| `tests/js/test_gadget_integration.cjs` | Microsoft's `weather.js` and `settings.js` in a simulated Sidebar for all 20 languages, with and without VBScript; the settings search fills the result list. `--online` uses the live APIs |
-| `tests/test_clean_settings.py` | runs the real `CleanGadgetSettings.ps1` on sample `settings.ini` files (UTF-16LE, UTF-8 with BOM, ANSI): removes only this gadget's sections and their `[Root]` references, keeps Microsoft's Weather gadget and the others, keeps the encoding, writes a backup; also parses both `.ps1` files. Uses `PWSH`, `powershell` or `pwsh`; skipped if none is found |
-| `tests/test_repository.py` | structure, encodings, no temporary files, Microsoft files unchanged except documented patches, localization checker (including negative tests), missing-file detection, archive layout and encodings, reproducibility, installer script, version consistency |
+| `tests/js/test_syntax.cjs` | gadget scripts and inline HTML scripts parse as ES3; old-JScript compatibility, script references, load order, and checker failures |
+| `tests/js/test_localization.cjs` | all 20 language tables, key parity, translated text, fallback, and language-folder lookup |
+| `tests/js/test_shim.cjs` | the shim offline: weather-code mapping, localized text, COM aliases, request parameters, results, and errors |
+| `tests/js/test_gadget_integration.cjs` | the released gadget baseline in a simulated Sidebar for all 20 languages and the settings search flow |
+| `tests/test_clean_settings.py` | the real PowerShell cleanup script on sample settings files; skipped if PowerShell is unavailable |
+| `tests/test_repository.py` | project-only repository footprint, assembled baseline preservation, locale checks (including negative tests), build outputs, reproducibility, installer settings, and version consistency |
 
-`tests/fixtures/` holds API responses recorded on 2026-09-26 and the hashes
-of the original gadget files.
+`tests/fixtures/` includes API responses and hashes for the reference gadget source used in the v1.0.0 build.
 
 ## Versioning
 
-`VERSION` is the single source of truth. When releasing:
-
-1. update `VERSION`, `package.json` (`version`), `CHANGELOG.md` and the
-   version shown in `README.md` (the tests check that they match);
-2. commit, then tag `vX.Y.Z` with the same number and push the tag.
-
-The workflow refuses to publish a release if the tag and `VERSION` differ.
+`VERSION` is the single source of truth. When preparing a future release, update `VERSION`, `package.json`, `CHANGELOG.md`, and the README version, then tag `vX.Y.Z`. The baseline portable release is deliberately pinned in `scripts/build.py`; do not silently retarget that baseline. If the baseline is intentionally advanced, update its URL and SHA-256 together and validate the full Windows build before publishing.
 
 ## Continuous integration
 
-`.github/workflows/build.yml` (runs on `windows-latest`):
+`.github/workflows/build.yml` runs on `windows-latest`:
 
-- on every push and pull request: checks, tests, installer build, tests
-  against the packaged gadget, upload of the setup, portable ZIP, and checksums
-  `Win7WeatherGadget-<version>`;
-- on a tag `v*.*.*`: the same, then a GitHub release with
-  `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip`.
+- on every push and pull request: downloads and verifies the pinned baseline, validates and tests the assembled gadget, builds the installer and portable ZIP, then uploads build artifacts;
+- on a tag `v*.*.*`: performs the same checks and publishes a GitHub release containing exactly `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip`.
 
-Inno Setup 6.7.3 is downloaded from its official GitHub release and its SHA-256
-is verified before installation.
+Inno Setup 6.7.3 is downloaded from its official GitHub release and its SHA-256 is verified before installation.

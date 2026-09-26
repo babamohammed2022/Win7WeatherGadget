@@ -8,9 +8,8 @@
 *.iss     text eol=crlf
 installer/README*.txt text eol=crlf
 
-# Inno Setup translations: vendored byte-exact (various encodings).
-*.isl     -text
-*.islu    -text
+# Project-owned custom Inno Setup translations: byte-exact UTF-8 with BOM.
+installer/Languages/Custom/*.isl -text
 
 # Binary files
 *.png     binary

@@ -89,8 +89,6 @@ DisableFinishedPage=no
 ShowLanguageDialog=auto
 LanguageDetectionMethod=uilanguage
 WizardStyle=modern
-SetupIconFile=icon.ico
-UninstallDisplayIcon={app}\icon.ico
 
 ; ---- output ----------------------------------------------------------------
 OutputDir=..\dist
@@ -100,7 +98,7 @@ SolidCompression=yes
 
 [Languages]
 ; ---------------------------------------------------------------------------
-;  Installer languages (78: English + the 77 translation files in Languages\).
+;  Installer languages (78: English + the 77 translation files in compiler:Languages\).
 ;  These are the languages of the SETUP WIZARD only; the gadget has its own
 ;  20 interface languages (see docs/LOCALIZATION.md).
 ;
@@ -108,7 +106,7 @@ SolidCompression=yes
 ;    1. compiler:Default.isl        - English base, so that any message missing
 ;                                     from an older translation file falls back
 ;                                     to English instead of failing the build;
-;    2. Languages\<Language>.isl    - the standard wizard translation;
+;    2. compiler:Languages\<Language>.isl    - the standard wizard translation;
 ;    3. Languages\Custom\English.isl - English text of the messages specific
 ;                                     to this installer ([CustomMessages]);
 ;    4. Languages\Custom\<Language>.isl - translation of those messages, for
@@ -116,83 +114,83 @@ SolidCompression=yes
 ;  Later files override earlier ones.
 ; ---------------------------------------------------------------------------
 Name: "en";   MessagesFile: "compiler:Default.isl,Languages\Custom\English.isl"
-Name: "ab";   MessagesFile: "compiler:Default.isl,Languages\Abkhazian.isl,Languages\Custom\English.isl"
-Name: "af";   MessagesFile: "compiler:Default.isl,Languages\Afrikaans.isl,Languages\Custom\English.isl"
-Name: "sq";   MessagesFile: "compiler:Default.isl,Languages\Albanian.isl,Languages\Custom\English.isl"
-Name: "ar";   MessagesFile: "compiler:Default.isl,Languages\Arabic.isl,Languages\Custom\English.isl"
-Name: "hy";   MessagesFile: "compiler:Default.isl,Languages\Armenian.isl,Languages\Custom\English.isl"
-Name: "ast";  MessagesFile: "compiler:Default.isl,Languages\Asturian.isl,Languages\Custom\English.isl"
-Name: "az";   MessagesFile: "compiler:Default.isl,Languages\Azerbaijan.isl,Languages\Custom\English.isl"
-Name: "eu";   MessagesFile: "compiler:Default.isl,Languages\Basque.isl,Languages\Custom\English.isl"
-Name: "be";   MessagesFile: "compiler:Default.isl,Languages\Belarusian.isl,Languages\Custom\English.isl"
-Name: "bn";   MessagesFile: "compiler:Default.isl,Languages\Bengali.islu,Languages\Custom\English.isl"
-Name: "bs";   MessagesFile: "compiler:Default.isl,Languages\Bosnian.isl,Languages\Custom\English.isl"
-Name: "ptbr"; MessagesFile: "compiler:Default.isl,Languages\BrazilianPortuguese.isl,Languages\Custom\English.isl,Languages\Custom\BrazilianPortuguese.isl"
-Name: "bg";   MessagesFile: "compiler:Default.isl,Languages\Bulgarian.isl,Languages\Custom\English.isl"
-Name: "ca";   MessagesFile: "compiler:Default.isl,Languages\Catalan.isl,Languages\Custom\English.isl"
-Name: "zhcn"; MessagesFile: "compiler:Default.isl,Languages\ChineseSimplified.isl,Languages\Custom\English.isl,Languages\Custom\ChineseSimplified.isl"
-Name: "zhtw"; MessagesFile: "compiler:Default.isl,Languages\ChineseTraditional.isl,Languages\Custom\English.isl,Languages\Custom\ChineseTraditional.isl"
-Name: "co";   MessagesFile: "compiler:Default.isl,Languages\Corsican.isl,Languages\Custom\English.isl"
-Name: "hr";   MessagesFile: "compiler:Default.isl,Languages\Croatian.isl,Languages\Custom\English.isl"
-Name: "cs";   MessagesFile: "compiler:Default.isl,Languages\Czech.isl,Languages\Custom\English.isl,Languages\Custom\Czech.isl"
-Name: "da";   MessagesFile: "compiler:Default.isl,Languages\Danish.isl,Languages\Custom\English.isl,Languages\Custom\Danish.isl"
-Name: "nl";   MessagesFile: "compiler:Default.isl,Languages\Dutch.isl,Languages\Custom\English.isl,Languages\Custom\Dutch.isl"
-Name: "engb"; MessagesFile: "compiler:Default.isl,Languages\EnglishBritish.isl,Languages\Custom\English.isl"
-Name: "eo";   MessagesFile: "compiler:Default.isl,Languages\Esperanto.isl,Languages\Custom\English.isl"
-Name: "et";   MessagesFile: "compiler:Default.isl,Languages\Estonian.isl,Languages\Custom\English.isl"
-Name: "ee";   MessagesFile: "compiler:Default.isl,Languages\Ewe.isl,Languages\Custom\English.isl"
-Name: "fa";   MessagesFile: "compiler:Default.isl,Languages\Farsi.isl,Languages\Custom\English.isl"
-Name: "fi";   MessagesFile: "compiler:Default.isl,Languages\Finnish.isl,Languages\Custom\English.isl,Languages\Custom\Finnish.isl"
-Name: "fr";   MessagesFile: "compiler:Default.isl,Languages\French.isl,Languages\Custom\English.isl,Languages\Custom\French.isl"
-Name: "gl";   MessagesFile: "compiler:Default.isl,Languages\Galician.isl,Languages\Custom\English.isl"
-Name: "ka";   MessagesFile: "compiler:Default.isl,Languages\Georgian.isl,Languages\Custom\English.isl"
-Name: "de";   MessagesFile: "compiler:Default.isl,Languages\German.isl,Languages\Custom\English.isl,Languages\Custom\German.isl"
-Name: "el";   MessagesFile: "compiler:Default.isl,Languages\Greek.isl,Languages\Custom\English.isl"
-Name: "he";   MessagesFile: "compiler:Default.isl,Languages\Hebrew.isl,Languages\Custom\English.isl"
-Name: "hi";   MessagesFile: "compiler:Default.isl,Languages\Hindi.islu,Languages\Custom\English.isl"
-Name: "hu";   MessagesFile: "compiler:Default.isl,Languages\Hungarian.isl,Languages\Custom\English.isl,Languages\Custom\Hungarian.isl"
-Name: "is";   MessagesFile: "compiler:Default.isl,Languages\Icelandic.isl,Languages\Custom\English.isl"
-Name: "id";   MessagesFile: "compiler:Default.isl,Languages\Indonesian.isl,Languages\Custom\English.isl"
-Name: "it";   MessagesFile: "compiler:Default.isl,Languages\Italian.isl,Languages\Custom\English.isl,Languages\Custom\Italian.isl"; InfoBeforeFile: "README.it.txt"
-Name: "ja";   MessagesFile: "compiler:Default.isl,Languages\Japanese.isl,Languages\Custom\English.isl,Languages\Custom\Japanese.isl"
-Name: "kk";   MessagesFile: "compiler:Default.isl,Languages\Kazakh.islu,Languages\Custom\English.isl"
-Name: "ko";   MessagesFile: "compiler:Default.isl,Languages\Korean.isl,Languages\Custom\English.isl,Languages\Custom\Korean.isl"
-Name: "ku";   MessagesFile: "compiler:Default.isl,Languages\Kurdish.isl,Languages\Custom\English.isl"
-Name: "lv";   MessagesFile: "compiler:Default.isl,Languages\Latvian.isl,Languages\Custom\English.isl"
-Name: "lij";  MessagesFile: "compiler:Default.isl,Languages\Ligurian.isl,Languages\Custom\English.isl"
-Name: "lt";   MessagesFile: "compiler:Default.isl,Languages\Lithuanian.isl,Languages\Custom\English.isl"
-Name: "lb";   MessagesFile: "compiler:Default.isl,Languages\Luxemburgish.isl,Languages\Custom\English.isl"
-Name: "mk";   MessagesFile: "compiler:Default.isl,Languages\Macedonian.isl,Languages\Custom\English.isl"
-Name: "ms";   MessagesFile: "compiler:Default.isl,Languages\Malaysian.isl,Languages\Custom\English.isl"
-Name: "mr";   MessagesFile: "compiler:Default.isl,Languages\Marathi.islu,Languages\Custom\English.isl"
-Name: "mn";   MessagesFile: "compiler:Default.isl,Languages\Mongolian.isl,Languages\Custom\English.isl"
-Name: "cnr";  MessagesFile: "compiler:Default.isl,Languages\Montenegrin.isl,Languages\Custom\English.isl"
-Name: "ne";   MessagesFile: "compiler:Default.isl,Languages\Nepali.islu,Languages\Custom\English.isl"
-Name: "no";   MessagesFile: "compiler:Default.isl,Languages\Norwegian.isl,Languages\Custom\English.isl,Languages\Custom\Norwegian.isl"
-Name: "nn";   MessagesFile: "compiler:Default.isl,Languages\NorwegianNynorsk.isl,Languages\Custom\English.isl"
-Name: "oc";   MessagesFile: "compiler:Default.isl,Languages\Occitan.isl,Languages\Custom\English.isl"
-Name: "pl";   MessagesFile: "compiler:Default.isl,Languages\Polish.isl,Languages\Custom\English.isl,Languages\Custom\Polish.isl"
-Name: "pt";   MessagesFile: "compiler:Default.isl,Languages\Portuguese.isl,Languages\Custom\English.isl"
-Name: "ro";   MessagesFile: "compiler:Default.isl,Languages\Romanian.isl,Languages\Custom\English.isl"
-Name: "ru";   MessagesFile: "compiler:Default.isl,Languages\Russian.isl,Languages\Custom\English.isl,Languages\Custom\Russian.isl"
-Name: "gd";   MessagesFile: "compiler:Default.isl,Languages\ScottishGaelic.isl,Languages\Custom\English.isl"
-Name: "sr";   MessagesFile: "compiler:Default.isl,Languages\SerbianCyrillic.isl,Languages\Custom\English.isl"
-Name: "srl";  MessagesFile: "compiler:Default.isl,Languages\SerbianLatin.isl,Languages\Custom\English.isl"
-Name: "si";   MessagesFile: "compiler:Default.isl,Languages\Sinhala.islu,Languages\Custom\English.isl"
-Name: "sk";   MessagesFile: "compiler:Default.isl,Languages\Slovak.isl,Languages\Custom\English.isl"
-Name: "sl";   MessagesFile: "compiler:Default.isl,Languages\Slovenian.isl,Languages\Custom\English.isl"
-Name: "es";   MessagesFile: "compiler:Default.isl,Languages\Spanish.isl,Languages\Custom\English.isl,Languages\Custom\Spanish.isl"
-Name: "sv";   MessagesFile: "compiler:Default.isl,Languages\Swedish.isl,Languages\Custom\English.isl,Languages\Custom\Swedish.isl"
-Name: "ta";   MessagesFile: "compiler:Default.isl,Languages\Tamil.isl,Languages\Custom\English.isl"
-Name: "tt";   MessagesFile: "compiler:Default.isl,Languages\Tatar.isl,Languages\Custom\English.isl"
-Name: "th";   MessagesFile: "compiler:Default.isl,Languages\Thai.isl,Languages\Custom\English.isl"
-Name: "tr";   MessagesFile: "compiler:Default.isl,Languages\Turkish.isl,Languages\Custom\English.isl,Languages\Custom\Turkish.isl"
-Name: "ug";   MessagesFile: "compiler:Default.isl,Languages\Uyghur.islu,Languages\Custom\English.isl"
-Name: "uk";   MessagesFile: "compiler:Default.isl,Languages\Ukrainian.isl,Languages\Custom\English.isl"
-Name: "ur";   MessagesFile: "compiler:Default.isl,Languages\Urdu.isl,Languages\Custom\English.isl"
-Name: "uz";   MessagesFile: "compiler:Default.isl,Languages\Uzbek.isl,Languages\Custom\English.isl"
-Name: "va";   MessagesFile: "compiler:Default.isl,Languages\Valencian.isl,Languages\Custom\English.isl"
-Name: "vi";   MessagesFile: "compiler:Default.isl,Languages\Vietnamese.isl,Languages\Custom\English.isl"
+Name: "ab";   MessagesFile: "compiler:Default.isl,compiler:Languages\Abkhazian.isl,Languages\Custom\English.isl"
+Name: "af";   MessagesFile: "compiler:Default.isl,compiler:Languages\Afrikaans.isl,Languages\Custom\English.isl"
+Name: "sq";   MessagesFile: "compiler:Default.isl,compiler:Languages\Albanian.isl,Languages\Custom\English.isl"
+Name: "ar";   MessagesFile: "compiler:Default.isl,compiler:Languages\Arabic.isl,Languages\Custom\English.isl"
+Name: "hy";   MessagesFile: "compiler:Default.isl,compiler:Languages\Armenian.isl,Languages\Custom\English.isl"
+Name: "ast";  MessagesFile: "compiler:Default.isl,compiler:Languages\Asturian.isl,Languages\Custom\English.isl"
+Name: "az";   MessagesFile: "compiler:Default.isl,compiler:Languages\Azerbaijan.isl,Languages\Custom\English.isl"
+Name: "eu";   MessagesFile: "compiler:Default.isl,compiler:Languages\Basque.isl,Languages\Custom\English.isl"
+Name: "be";   MessagesFile: "compiler:Default.isl,compiler:Languages\Belarusian.isl,Languages\Custom\English.isl"
+Name: "bn";   MessagesFile: "compiler:Default.isl,compiler:Languages\Bengali.islu,Languages\Custom\English.isl"
+Name: "bs";   MessagesFile: "compiler:Default.isl,compiler:Languages\Bosnian.isl,Languages\Custom\English.isl"
+Name: "ptbr"; MessagesFile: "compiler:Default.isl,compiler:Languages\BrazilianPortuguese.isl,Languages\Custom\English.isl,Languages\Custom\BrazilianPortuguese.isl"
+Name: "bg";   MessagesFile: "compiler:Default.isl,compiler:Languages\Bulgarian.isl,Languages\Custom\English.isl"
+Name: "ca";   MessagesFile: "compiler:Default.isl,compiler:Languages\Catalan.isl,Languages\Custom\English.isl"
+Name: "zhcn"; MessagesFile: "compiler:Default.isl,compiler:Languages\ChineseSimplified.isl,Languages\Custom\English.isl,Languages\Custom\ChineseSimplified.isl"
+Name: "zhtw"; MessagesFile: "compiler:Default.isl,compiler:Languages\ChineseTraditional.isl,Languages\Custom\English.isl,Languages\Custom\ChineseTraditional.isl"
+Name: "co";   MessagesFile: "compiler:Default.isl,compiler:Languages\Corsican.isl,Languages\Custom\English.isl"
+Name: "hr";   MessagesFile: "compiler:Default.isl,compiler:Languages\Croatian.isl,Languages\Custom\English.isl"
+Name: "cs";   MessagesFile: "compiler:Default.isl,compiler:Languages\Czech.isl,Languages\Custom\English.isl,Languages\Custom\Czech.isl"
+Name: "da";   MessagesFile: "compiler:Default.isl,compiler:Languages\Danish.isl,Languages\Custom\English.isl,Languages\Custom\Danish.isl"
+Name: "nl";   MessagesFile: "compiler:Default.isl,compiler:Languages\Dutch.isl,Languages\Custom\English.isl,Languages\Custom\Dutch.isl"
+Name: "engb"; MessagesFile: "compiler:Default.isl,compiler:Languages\EnglishBritish.isl,Languages\Custom\English.isl"
+Name: "eo";   MessagesFile: "compiler:Default.isl,compiler:Languages\Esperanto.isl,Languages\Custom\English.isl"
+Name: "et";   MessagesFile: "compiler:Default.isl,compiler:Languages\Estonian.isl,Languages\Custom\English.isl"
+Name: "ee";   MessagesFile: "compiler:Default.isl,compiler:Languages\Ewe.isl,Languages\Custom\English.isl"
+Name: "fa";   MessagesFile: "compiler:Default.isl,compiler:Languages\Farsi.isl,Languages\Custom\English.isl"
+Name: "fi";   MessagesFile: "compiler:Default.isl,compiler:Languages\Finnish.isl,Languages\Custom\English.isl,Languages\Custom\Finnish.isl"
+Name: "fr";   MessagesFile: "compiler:Default.isl,compiler:Languages\French.isl,Languages\Custom\English.isl,Languages\Custom\French.isl"
+Name: "gl";   MessagesFile: "compiler:Default.isl,compiler:Languages\Galician.isl,Languages\Custom\English.isl"
+Name: "ka";   MessagesFile: "compiler:Default.isl,compiler:Languages\Georgian.isl,Languages\Custom\English.isl"
+Name: "de";   MessagesFile: "compiler:Default.isl,compiler:Languages\German.isl,Languages\Custom\English.isl,Languages\Custom\German.isl"
+Name: "el";   MessagesFile: "compiler:Default.isl,compiler:Languages\Greek.isl,Languages\Custom\English.isl"
+Name: "he";   MessagesFile: "compiler:Default.isl,compiler:Languages\Hebrew.isl,Languages\Custom\English.isl"
+Name: "hi";   MessagesFile: "compiler:Default.isl,compiler:Languages\Hindi.islu,Languages\Custom\English.isl"
+Name: "hu";   MessagesFile: "compiler:Default.isl,compiler:Languages\Hungarian.isl,Languages\Custom\English.isl,Languages\Custom\Hungarian.isl"
+Name: "is";   MessagesFile: "compiler:Default.isl,compiler:Languages\Icelandic.isl,Languages\Custom\English.isl"
+Name: "id";   MessagesFile: "compiler:Default.isl,compiler:Languages\Indonesian.isl,Languages\Custom\English.isl"
+Name: "it";   MessagesFile: "compiler:Default.isl,compiler:Languages\Italian.isl,Languages\Custom\English.isl,Languages\Custom\Italian.isl"; InfoBeforeFile: "README.it.txt"
+Name: "ja";   MessagesFile: "compiler:Default.isl,compiler:Languages\Japanese.isl,Languages\Custom\English.isl,Languages\Custom\Japanese.isl"
+Name: "kk";   MessagesFile: "compiler:Default.isl,compiler:Languages\Kazakh.islu,Languages\Custom\English.isl"
+Name: "ko";   MessagesFile: "compiler:Default.isl,compiler:Languages\Korean.isl,Languages\Custom\English.isl,Languages\Custom\Korean.isl"
+Name: "ku";   MessagesFile: "compiler:Default.isl,compiler:Languages\Kurdish.isl,Languages\Custom\English.isl"
+Name: "lv";   MessagesFile: "compiler:Default.isl,compiler:Languages\Latvian.isl,Languages\Custom\English.isl"
+Name: "lij";  MessagesFile: "compiler:Default.isl,compiler:Languages\Ligurian.isl,Languages\Custom\English.isl"
+Name: "lt";   MessagesFile: "compiler:Default.isl,compiler:Languages\Lithuanian.isl,Languages\Custom\English.isl"
+Name: "lb";   MessagesFile: "compiler:Default.isl,compiler:Languages\Luxemburgish.isl,Languages\Custom\English.isl"
+Name: "mk";   MessagesFile: "compiler:Default.isl,compiler:Languages\Macedonian.isl,Languages\Custom\English.isl"
+Name: "ms";   MessagesFile: "compiler:Default.isl,compiler:Languages\Malaysian.isl,Languages\Custom\English.isl"
+Name: "mr";   MessagesFile: "compiler:Default.isl,compiler:Languages\Marathi.islu,Languages\Custom\English.isl"
+Name: "mn";   MessagesFile: "compiler:Default.isl,compiler:Languages\Mongolian.isl,Languages\Custom\English.isl"
+Name: "cnr";  MessagesFile: "compiler:Default.isl,compiler:Languages\Montenegrin.isl,Languages\Custom\English.isl"
+Name: "ne";   MessagesFile: "compiler:Default.isl,compiler:Languages\Nepali.islu,Languages\Custom\English.isl"
+Name: "no";   MessagesFile: "compiler:Default.isl,compiler:Languages\Norwegian.isl,Languages\Custom\English.isl,Languages\Custom\Norwegian.isl"
+Name: "nn";   MessagesFile: "compiler:Default.isl,compiler:Languages\NorwegianNynorsk.isl,Languages\Custom\English.isl"
+Name: "oc";   MessagesFile: "compiler:Default.isl,compiler:Languages\Occitan.isl,Languages\Custom\English.isl"
+Name: "pl";   MessagesFile: "compiler:Default.isl,compiler:Languages\Polish.isl,Languages\Custom\English.isl,Languages\Custom\Polish.isl"
+Name: "pt";   MessagesFile: "compiler:Default.isl,compiler:Languages\Portuguese.isl,Languages\Custom\English.isl"
+Name: "ro";   MessagesFile: "compiler:Default.isl,compiler:Languages\Romanian.isl,Languages\Custom\English.isl"
+Name: "ru";   MessagesFile: "compiler:Default.isl,compiler:Languages\Russian.isl,Languages\Custom\English.isl,Languages\Custom\Russian.isl"
+Name: "gd";   MessagesFile: "compiler:Default.isl,compiler:Languages\ScottishGaelic.isl,Languages\Custom\English.isl"
+Name: "sr";   MessagesFile: "compiler:Default.isl,compiler:Languages\SerbianCyrillic.isl,Languages\Custom\English.isl"
+Name: "srl";  MessagesFile: "compiler:Default.isl,compiler:Languages\SerbianLatin.isl,Languages\Custom\English.isl"
+Name: "si";   MessagesFile: "compiler:Default.isl,compiler:Languages\Sinhala.islu,Languages\Custom\English.isl"
+Name: "sk";   MessagesFile: "compiler:Default.isl,compiler:Languages\Slovak.isl,Languages\Custom\English.isl"
+Name: "sl";   MessagesFile: "compiler:Default.isl,compiler:Languages\Slovenian.isl,Languages\Custom\English.isl"
+Name: "es";   MessagesFile: "compiler:Default.isl,compiler:Languages\Spanish.isl,Languages\Custom\English.isl,Languages\Custom\Spanish.isl"
+Name: "sv";   MessagesFile: "compiler:Default.isl,compiler:Languages\Swedish.isl,Languages\Custom\English.isl,Languages\Custom\Swedish.isl"
+Name: "ta";   MessagesFile: "compiler:Default.isl,compiler:Languages\Tamil.isl,Languages\Custom\English.isl"
+Name: "tt";   MessagesFile: "compiler:Default.isl,compiler:Languages\Tatar.isl,Languages\Custom\English.isl"
+Name: "th";   MessagesFile: "compiler:Default.isl,compiler:Languages\Thai.isl,Languages\Custom\English.isl"
+Name: "tr";   MessagesFile: "compiler:Default.isl,compiler:Languages\Turkish.isl,Languages\Custom\English.isl,Languages\Custom\Turkish.isl"
+Name: "ug";   MessagesFile: "compiler:Default.isl,compiler:Languages\Uyghur.islu,Languages\Custom\English.isl"
+Name: "uk";   MessagesFile: "compiler:Default.isl,compiler:Languages\Ukrainian.isl,Languages\Custom\English.isl"
+Name: "ur";   MessagesFile: "compiler:Default.isl,compiler:Languages\Urdu.isl,Languages\Custom\English.isl"
+Name: "uz";   MessagesFile: "compiler:Default.isl,compiler:Languages\Uzbek.isl,Languages\Custom\English.isl"
+Name: "va";   MessagesFile: "compiler:Default.isl,compiler:Languages\Valencian.isl,Languages\Custom\English.isl"
+Name: "vi";   MessagesFile: "compiler:Default.isl,compiler:Languages\Vietnamese.isl,Languages\Custom\English.isl"
 
 [InstallDelete]
 ; Start from a clean gadget folder so that no file from an older version is
@@ -213,7 +211,6 @@ Source: "{#StageDir}\docs\LICENSE.txt";   DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\docs\NOTICE.md";     DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\docs\CHANGELOG.md";  DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\tools\CleanGadgetSettings.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
-Source: "icon.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
 ; Finish page: optional, pre-checked, only offered when a runtime was found.

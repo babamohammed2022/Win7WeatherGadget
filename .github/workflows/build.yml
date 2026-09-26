@@ -62,14 +62,8 @@ jobs:
           $v = '${{ steps.version.outputs.version }}'
           if ($tag -ne "v$v") { throw "Tag $tag does not match VERSION $v" }
 
-      - name: Validate structure and the 20 gadget languages
-        run: python scripts/check_localization.py
-
       - name: Install test dependencies
         run: npm ci
-
-      - name: JavaScript validation and tests
-        run: npm test
 
       - name: Install Inno Setup ${{ env.INNO_VERSION }}
         shell: pwsh
@@ -89,6 +83,12 @@ jobs:
         env:
           APP_URL: ${{ github.server_url }}/${{ github.repository }}
         run: python scripts/build.py --require-installer
+
+      - name: Validate structure and the 20 gadget languages
+        run: python scripts/check_localization.py --gadget dist/source/Weather.gadget
+
+      - name: JavaScript validation and tests
+        run: npm test -- --gadget dist/source/Weather.gadget
 
       - name: Python tests (repository, localization, packages, installer)
         run: python scripts/run_tests.py
