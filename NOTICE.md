@@ -1,16 +1,6 @@
 # NOTICE
 
-This notice distinguishes project-authored files from material in the distributed gadget and third-party tools. Attribution is not a license grant or a statement of authorization.
-
-## Microsoft Windows 7 Weather gadget
-
-The complete Weather gadget included in `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip` is derived from Microsoft's Windows 7 Weather gadget (manifest version 1.1.0.0, author Microsoft Corporation, © 2009). Microsoft copyright notices in the packaged files are retained.
-
-To avoid keeping a duplicate copy of the large gadget payload in the current source tree, this repository stores the project's own overlays, localization files, build scripts, tests, and documentation. The build obtains its baseline from the public v1.0.0 portable release asset, verifies a pinned SHA-256, then applies the project overlays. The MediaFire archive is cited only as an original source/reference; it is not required by the build or installer.
-
-The release package contains Microsoft-derived code and artwork. Its inclusion and attribution do not establish a redistribution license, Microsoft authorization, affiliation, or endorsement. This is an unofficial community project and is not affiliated with or endorsed by Microsoft. The project's MIT license does not relicense Microsoft's material.
-
-The source archive described the gadget as "recovered from a public Windows 7 gadget archive." The exact original source could not be independently verified, and pristine Microsoft files were not independently available for comparison. The changes made for this project are documented in [docs/PATCHES.md](docs/PATCHES.md).
+This notice distinguishes project-authored files from material in the distributed gadget and third-party tools. 
 
 ## Project-authored files
 
@@ -37,10 +27,7 @@ No service data is stored in this repository apart from recorded test fixtures i
 
 The installer and `Install.cmd -host` can download the Desktop Gadgets runtime from Gadgets Revived only when the user explicitly requests it. The download is checked against a pinned SHA-256 before it is run. The runtime is a separate program and is not bundled with this project. 8GadgetPack is another separate runtime option.
 
-## Test-only npm dependencies
-
-`package.json` uses Acorn and acorn-walk only for JavaScript validation tests. They are development dependencies, fetched by `npm ci`, and are not copied into either release package. Both are distributed under the MIT license; their notices are included with their npm packages.
 
 ## License of project files
 
-The project's own files are licensed under the [MIT License](LICENSE). That license does not cover Microsoft-derived gadget material, the optional runtime, or third-party components. See the notices above and the licenses of those components.
+The project's own files are licensed under the [MIT License](LICENSE). 
