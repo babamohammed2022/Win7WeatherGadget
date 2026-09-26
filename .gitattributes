@@ -1,0 +1,21 @@
+# Text files are stored with LF and UTF-8 (without BOM) unless listed below.
+* text=auto eol=lf
+
+# Windows scripts and the Inno Setup script need CRLF.
+*.cmd     text eol=crlf
+*.bat     text eol=crlf
+*.ps1     text eol=crlf
+*.iss     text eol=crlf
+installer/README*.txt text eol=crlf
+
+# Project-owned custom Inno Setup translations: byte-exact UTF-8 with BOM.
+installer/Languages/Custom/*.isl -text
+
+# Binary files
+*.png     binary
+*.gif     binary
+*.jpg     binary
+*.ico     binary
+*.exe     binary
+*.zip     binary
+*.gadget  binary

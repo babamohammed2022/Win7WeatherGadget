@@ -1,0 +1,54 @@
+# Build output
+/dist/
+build/
+out/
+bin/
+obj/
+*.gadget.zip
+/installer/Output/
+
+# Installer and portable build output
+Win7WeatherGadget-Setup.exe
+Win7WeatherGadget-Portable.zip
+SHA256SUMS.txt
+*.rar
+*.exe
+*.zip
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs, temporary and backup files
+*.log
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*~
+~$*
+*.swp
+
+# IDE and editor settings
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.sln.docstates
+
+# Operating system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

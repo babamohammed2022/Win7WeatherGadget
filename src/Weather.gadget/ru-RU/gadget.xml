@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gadget>
+  <name>Погода</name>
+  <namespace>microsoft.windows</namespace>
+  <version>1.1.0.0</version>
+  <author name="Microsoft Corporation">
+    <info url="http://go.microsoft.com/fwlink/?LinkId=124093" text="www.gallery.microsoft.com"/>
+    <logo src="logo.png"/>
+  </author>
+  <copyright>&#169; 2009</copyright>
+  <description>Узнайте погоду в любой точке мира.</description>
+  <icons>
+    <icon width="130" height="67" src="icon.png"/>
+  </icons>
+  <hosts>
+    <host name="sidebar">
+      <autoscaleDPI>true</autoscaleDPI>
+      <base type="HTML" apiVersion="1.0.0" src="Weather.html"/>
+      <permissions>Full</permissions>
+      <platform minPlatformVersion="1.0"/>
+      <defaultImage src="drag.png"/>
+    </host>
+  </hosts>
+</gadget>
