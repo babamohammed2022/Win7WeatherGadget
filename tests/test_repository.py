@@ -428,6 +428,14 @@ class ReleasePackagingTests(unittest.TestCase):
         workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")
         self.assertIn("python scripts/build.py --require-installer", workflow)
 
+    def test_workflow_pins_and_stages_inno_language_sources(self):
+        workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")
+        commit = "4adf37ed7f3fd2bd11c6836ba056e3de170fbabf"
+        self.assertIn(f'INNO_TRANSLATIONS_COMMIT: "{commit}"', workflow)
+        self.assertIn("git -C $source fetch --depth=1 origin $env:INNO_TRANSLATIONS_COMMIT", workflow)
+        self.assertIn('Join-Path $dir "Languages"', workflow)
+        self.assertIn("$languageFiles.Count -ne 77", workflow)
+
     def test_workflow_releases_only_the_two_named_files(self):
         workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")
         release = workflow.split("- name: Create or update GitHub release", 1)[1]

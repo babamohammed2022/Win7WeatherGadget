@@ -139,5 +139,7 @@ messages (including the runtime page) in the 20 gadget languages. For the other
 58 wizard languages English custom messages are used. The files are UTF-8 with
 BOM and CRLF (`.gitattributes` keeps them byte-exact); `%n` is a line break.
 
-Standard wizard translations are referenced from the pinned Inno Setup 6.7.3
-compiler installation and are not duplicated in this repository.
+Standard wizard translations are obtained from the `jrsoftware/issrc` source
+repository at pinned commit `4adf37ed7f3fd2bd11c6836ba056e3de170fbabf` and staged
+under the pinned Inno Setup 6.7.3 compiler's `Languages` directory by CI. They
+are not duplicated in this repository.

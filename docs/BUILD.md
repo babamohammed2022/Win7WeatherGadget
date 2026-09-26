@@ -5,7 +5,8 @@
 | Tool | Version | Needed for |
 |---|---|---|
 | Python | 3.8 or newer (standard library only) | source assembly, build, localization check, Python tests |
-| Inno Setup | 6.7.3 (pinned in CI) | compiling the installer (`ISCC.exe`) and supplying the standard installer languages |
+| Inno Setup | 6.7.3 (pinned in CI) | compiling the installer (`ISCC.exe`) |
+| Inno Setup language sources | pinned `jrsoftware/issrc` commit (pinned in CI) | supplying the 77 standard wizard translations at the compiler's `Languages` path |
 | Node.js | 18 or newer | JavaScript tests |
 | Internet access | GitHub release asset | downloading the pinned gadget baseline |
 
@@ -58,7 +59,7 @@ Run a build first; it creates `dist\stage` and the reconstructed gadget tree:
 
 `Setup.iss` reads the version from `VERSION`. Optional defines:
 `/DMyAppVersion=x.y.z`, `/DMyAppURL=https://…`, `/DStageDir=<staging folder>`.
-The standard installer language files are referenced from the pinned Inno Setup compiler; only the project's custom translations are stored in this repository.
+The Inno Setup installer does not provide all 77 standard wizard translations referenced by this project. CI fetches them from `jrsoftware/issrc` at commit `4adf37ed7f3fd2bd11c6836ba056e3de170fbabf` and stages them under the compiler's `Languages` directory; they are not stored in this repository. The project's custom messages remain in `installer\Languages\Custom\`.
 
 ### Linux (Wine)
 

@@ -98,7 +98,8 @@ SolidCompression=yes
 
 [Languages]
 ; ---------------------------------------------------------------------------
-;  Installer languages (78: English + the 77 translation files in compiler:Languages\).
+;  Installer languages (78: English + 77 standard files staged in compiler:Languages\
+;  from the pinned Inno Setup source revision by the CI workflow).
 ;  These are the languages of the SETUP WIZARD only; the gadget has its own
 ;  20 interface languages (see docs/LOCALIZATION.md).
 ;

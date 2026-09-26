@@ -22,7 +22,7 @@ The full gadget source tree is reconstructed temporarily under the ignored `dist
 
 ## Inno Setup
 
-The installer uses Inno Setup 6.7.3. Standard installer language files are referenced from the Inno Setup compiler installation and are not vendored in this repository. The project's custom installer translations are in `installer/Languages/Custom/`.
+The installer uses Inno Setup 6.7.3. During CI builds, the 77 standard installer language files referenced by `installer/Setup.iss` are fetched from the Inno Setup source repository (`jrsoftware/issrc`, commit `4adf37ed7f3fd2bd11c6836ba056e3de170fbabf`) and staged under the compiler's `Languages` directory; they are not vendored in this repository. Their original translation credits remain in the files. The project's custom installer translations are in `installer/Languages/Custom/`.
 
 The setup and uninstaller programs embedded in the setup executable are © Jordan Russell and Martijn Laan and are distributed under the Inno Setup license: <https://jrsoftware.org/files/is/license.txt>.
 

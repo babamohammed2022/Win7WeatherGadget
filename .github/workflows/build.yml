@@ -23,6 +23,7 @@ env:
   INNO_VERSION: "6.7.3"
   INNO_URL: "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe"
   INNO_SHA256: "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732"
+  INNO_TRANSLATIONS_COMMIT: "4adf37ed7f3fd2bd11c6836ba056e3de170fbabf"
 
 jobs:
   build:
@@ -77,6 +78,34 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "Inno Setup installation failed ($($p.ExitCode))" }
           $iscc = Join-Path $dir "ISCC.exe"
           if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+
+          # The compiler installer does not include the unofficial .isl files
+          # referenced by this project's 78-language wizard. Fetch the complete
+          # upstream language set at a fixed source revision into the compiler's
+          # expected path, without vendoring those files in this repository.
+          $source = Join-Path $env:RUNNER_TEMP "innosetup-source"
+          git init $source
+          if ($LASTEXITCODE -ne 0) { throw "Could not initialize Inno Setup source checkout" }
+          git -C $source remote add origin https://github.com/jrsoftware/issrc.git
+          if ($LASTEXITCODE -ne 0) { throw "Could not configure Inno Setup source checkout" }
+          git -C $source fetch --depth=1 origin $env:INNO_TRANSLATIONS_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw "Could not fetch pinned Inno Setup language sources" }
+          git -C $source sparse-checkout init --cone
+          if ($LASTEXITCODE -ne 0) { throw "Could not configure sparse Inno Setup source checkout" }
+          git -C $source sparse-checkout set Files/Languages
+          if ($LASTEXITCODE -ne 0) { throw "Could not select Inno Setup language sources" }
+          git -C $source checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Could not check out pinned Inno Setup language sources" }
+
+          $sourceLanguages = Join-Path $source "Files\Languages"
+          $compilerLanguages = Join-Path $dir "Languages"
+          New-Item -ItemType Directory -Force -Path $compilerLanguages | Out-Null
+          $languageFiles = @(Get-ChildItem -Path $sourceLanguages -File -Recurse | Where-Object { $_.Extension -in @(".isl", ".islu") })
+          if ($languageFiles.Count -ne 77) { throw "Expected 77 pinned Inno Setup language files, found $($languageFiles.Count)" }
+          $duplicateNames = @($languageFiles | Group-Object Name | Where-Object Count -gt 1)
+          if ($duplicateNames.Count -gt 0) { throw "Duplicate Inno Setup language filenames: $($duplicateNames.Name -join ', ')" }
+          foreach ($file in $languageFiles) { Copy-Item $file.FullName (Join-Path $compilerLanguages $file.Name) }
+          if (-not (Test-Path (Join-Path $compilerLanguages "Abkhazian.isl"))) { throw "Pinned Inno Setup language files were not staged correctly" }
           "ISCC=$iscc" >> $env:GITHUB_ENV
 
       - name: Build installer, gadget and ZIP
