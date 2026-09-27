@@ -2,7 +2,11 @@
 
 A multilingual restoration of the classic Windows Weather desktop gadget for Windows 7, and for Windows 10 and 11 with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
 
+Note: This is an independent, community-developed project aimed at restoring a classic interface for contemporary operating systems.
 
+This project is not affiliated with, authorized by, or officially connected to Microsoft Corporation. All trademarks, service marks, and trade names referenced herein remain the property of their respective owners and are used strictly for compatibility and identification purposes.
+
+Meteorological data and location services are provided via open, third-party APIs.
 
 ## Features
 
