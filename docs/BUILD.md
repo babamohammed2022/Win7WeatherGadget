@@ -114,4 +114,6 @@ node tests\js\run_all.cjs --gadget dist\stage\gadget\Weather.gadget
 - on a tag `vX.Y.Z`: performs the same checks and publishes a GitHub release containing exactly `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip`; the annotated tag message is used as the release notes;
 - on a tag `vX.Y.Z-<label>`: the same, published as a pre-release (test build).
 
+The release is published by the same Windows job that built and tested the files, so it does not depend on workflow artifacts; their upload is best effort (seven-day retention) and a full Actions storage quota does not block a release.
+
 Inno Setup 6.7.3 is downloaded from its official GitHub release and its SHA-256 is verified before installation.

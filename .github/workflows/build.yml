@@ -2,7 +2,8 @@
 #
 # Every push / pull request: structure and localization checks, JavaScript and
 # Python tests, installer build with Inno Setup, tests against the packaged
-# gadget, upload of the build as a workflow artifact.
+# gadget, upload of the build as a workflow artifact (best effort: it is not
+# needed for releases, which are published directly by the Windows job).
 # Tag vX.Y.Z (matching the VERSION file): the same, plus a GitHub release with
 # exactly two assets: Win7WeatherGadget-Setup.exe and
 # Win7WeatherGadget-Portable.zip.
@@ -31,9 +32,8 @@ jobs:
   build:
     name: Test and build
     runs-on: windows-latest
-    outputs:
-      version: ${{ steps.version.outputs.version }}
-      prerelease: ${{ steps.tag.outputs.prerelease }}
+    permissions:
+      contents: write   # publishing the release on tags
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,9 +140,13 @@ jobs:
       - name: JavaScript tests against the packaged gadget
         run: node tests/js/run_all.cjs --gadget dist/stage/gadget/Weather.gadget
 
+      # Convenience copy for branch builds. Not required for releases (they are
+      # published below from this job), so a full artifact quota does not block them.
       - name: Upload build artifacts
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
+          retention-days: 7
           name: Win7WeatherGadget-${{ steps.version.outputs.version }}
           path: |
             dist/Win7WeatherGadget-Setup.exe
@@ -150,31 +154,18 @@ jobs:
             dist/SHA256SUMS.txt
           if-no-files-found: error
 
-  release:
-    name: Publish release
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download build artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: Win7WeatherGadget-${{ needs.build.outputs.version }}
-          path: dist
-
       - name: Verify checksums
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         working-directory: dist
         run: sha256sum -c SHA256SUMS.txt
 
       - name: Release notes from the tag message
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         env:
           TAG: ${{ github.ref_name }}
-          VERSION: ${{ needs.build.outputs.version }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           # An annotated tag's message becomes the release notes.
           git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
@@ -187,12 +178,14 @@ jobs:
           cat release-notes.md
 
       - name: Create or update GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag='${{ github.ref_name }}'
           title="Windows 7 Weather Gadget ${tag#v}"
-          if [ '${{ needs.build.outputs.prerelease }}' = 'true' ]; then
+          if [ '${{ steps.tag.outputs.prerelease }}' = 'true' ]; then
             kind=(--prerelease)
             title="$title (test build)"
           else
