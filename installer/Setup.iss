@@ -305,8 +305,8 @@ begin
 end;
 
 { "Program Files" of the architecture of Windows itself. The installer is a
-  32-bit program, so on 64-bit Windows {commonpf} is "Program Files (x86)",
-  the folder of the 32-bit sidebar.exe. }
+  32-bit program, so on 64-bit Windows the commonpf constant is
+  "Program Files (x86)", the folder of the 32-bit sidebar.exe. }
 function NativeProgramFiles(): String;
 begin
   if IsWin64 then
