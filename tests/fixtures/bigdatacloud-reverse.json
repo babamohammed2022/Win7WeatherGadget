@@ -1,0 +1,140 @@
+{
+  "latitude": 48.8566,
+  "lookupSource": "coordinates",
+  "longitude": 2.3522,
+  "localityLanguageRequested": "fr",
+  "continent": "Europe",
+  "continentCode": "EU",
+  "countryName": "France",
+  "countryCode": "FR",
+  "principalSubdivision": "Île-de-France",
+  "principalSubdivisionCode": "FR-IDF",
+  "city": "Paris",
+  "locality": "Saint-Merri",
+  "postcode": "75004",
+  "plusCode": "8FW4V942+JV",
+  "localityInfo": {
+    "administrative": [
+      {
+        "name": "France",
+        "description": "pays transcontinental au territoire métropolitain situé en Europe de l'Ouest",
+        "isoName": "France",
+        "order": 3,
+        "adminLevel": 2,
+        "isoCode": "FR",
+        "wikidataId": "Q142",
+        "geonameId": 3017382
+      },
+      {
+        "name": "France métropolitaine",
+        "description": "ensemble des territoires européens de la France",
+        "order": 5,
+        "adminLevel": 3,
+        "wikidataId": "Q212429"
+      },
+      {
+        "name": "Île-de-France",
+        "description": "région administrative française",
+        "isoName": "Ile-de-France",
+        "order": 6,
+        "adminLevel": 4,
+        "isoCode": "FR-IDF",
+        "wikidataId": "Q13917",
+        "geonameId": 3012874
+      },
+      {
+        "name": "Paris",
+        "description": "capitale et ville la plus peuplée de France",
+        "isoName": "Paris",
+        "order": 9,
+        "adminLevel": 6,
+        "isoCode": "FR-75C",
+        "wikidataId": "Q90",
+        "geonameId": 2968815
+      },
+      {
+        "name": "Paris",
+        "description": "capitale et ville la plus peuplée de France",
+        "order": 10,
+        "adminLevel": 6,
+        "wikidataId": "Q90",
+        "geonameId": 2988507
+      },
+      {
+        "name": "arrondissement de Paris",
+        "description": "arrondissement couvrant la Ville de Paris",
+        "order": 12,
+        "adminLevel": 7,
+        "wikidataId": "Q2863958"
+      },
+      {
+        "name": "4e arrondissement de Paris",
+        "description": "arrondissement de la capitale de la France",
+        "order": 13,
+        "adminLevel": 9,
+        "wikidataId": "Q230127",
+        "geonameId": 6618610
+      },
+      {
+        "name": "Saint-Gervais",
+        "description": "quartier administratif de Paris, France",
+        "order": 15,
+        "adminLevel": 10,
+        "wikidataId": "Q3413113"
+      },
+      {
+        "name": "Saint-Merri",
+        "description": "quartier administratif de Paris, France",
+        "order": 16,
+        "adminLevel": 10,
+        "wikidataId": "Q3413122",
+        "geonameId": 2978048
+      }
+    ],
+    "informative": [
+      {
+        "name": "Europe",
+        "description": "continent terrestre situé au nord-ouest de l'Eurasie",
+        "isoName": "Europe",
+        "order": 1,
+        "isoCode": "EU",
+        "wikidataId": "Q46",
+        "geonameId": 6255148
+      },
+      {
+        "name": "Plaine d'Europe du Nord",
+        "description": "geomorphological region in Europe",
+        "order": 2,
+        "wikidataId": "Q560549"
+      },
+      {
+        "name": "Europe/Paris",
+        "description": "fuseau horaire",
+        "order": 4
+      },
+      {
+        "name": "Métropole du Grand Paris",
+        "description": "intercommunalité française d'Île-de-France",
+        "order": 7,
+        "wikidataId": "Q16665915"
+      },
+      {
+        "name": "Seine",
+        "description": "ancien département français, de 1790 à 1968",
+        "order": 8,
+        "wikidataId": "Q1142326"
+      },
+      {
+        "name": "académie de Paris",
+        "description": "circonscription scolaire et universitaire correspondant géographiquement à Paris",
+        "order": 11,
+        "wikidataId": "Q2822323"
+      },
+      {
+        "name": "75004",
+        "description": "code postal",
+        "order": 14
+      }
+    ]
+  }
+}

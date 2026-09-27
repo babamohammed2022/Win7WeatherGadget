@@ -1,0 +1,205 @@
+# Build, test and release the Windows 7 Weather Gadget.
+#
+# Every push / pull request: structure and localization checks, JavaScript and
+# Python tests, installer build with Inno Setup, tests against the packaged
+# gadget, upload of the build as a workflow artifact (best effort: it is not
+# needed for releases, which are published directly by the Windows job).
+# Tag vX.Y.Z (matching the VERSION file): the same, plus a GitHub release with
+# exactly two assets: Win7WeatherGadget-Setup.exe and
+# Win7WeatherGadget-Portable.zip.
+# Tag vX.Y.Z-<label> (for example v1.0.1-beta.1): the same, published as a
+# pre-release (a test build that does not become the "latest" release).
+
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*.*.*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  INNO_VERSION: "6.7.3"
+  INNO_URL: "https://github.com/jrsoftware/issrc/releases/download/is-6_7_3/innosetup-6.7.3.exe"
+  INNO_SHA256: "9c73c3bae7ed48d44112a0f48e66742c00090bdb5bef71d9d3c056c66e97b732"
+  INNO_TRANSLATIONS_COMMIT: "4adf37ed7f3fd2bd11c6836ba056e3de170fbabf"
+
+jobs:
+  build:
+    name: Test and build
+    runs-on: windows-latest
+    permissions:
+      contents: write   # publishing the release on tags
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Read version
+        id: version
+        shell: pwsh
+        run: |
+          $v = (Get-Content VERSION -Raw).Trim()
+          if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "Invalid VERSION: '$v'" }
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version $v"
+
+      - name: Check tag matches VERSION
+        id: tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $v = '${{ steps.version.outputs.version }}'
+          if ($tag -eq "v$v") {
+            "prerelease=false" >> $env:GITHUB_OUTPUT
+          } elseif ($tag -match ('^v' + [regex]::Escape($v) + '-[0-9A-Za-z][0-9A-Za-z.-]*$')) {
+            "prerelease=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Test build $tag (pre-release)"
+          } else {
+            throw "Tag $tag does not match VERSION $v (expected v$v or v$v-<label>)"
+          }
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Install Inno Setup ${{ env.INNO_VERSION }}
+        shell: pwsh
+        run: |
+          $exe = Join-Path $env:RUNNER_TEMP "innosetup-$env:INNO_VERSION.exe"
+          Invoke-WebRequest -Uri $env:INNO_URL -OutFile $exe
+          $hash = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:INNO_SHA256) { throw "Inno Setup checksum mismatch: $hash" }
+          $dir = Join-Path $env:RUNNER_TEMP "InnoSetup"
+          $p = Start-Process -FilePath $exe -ArgumentList "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/SP-", "/DIR=`"$dir`"" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "Inno Setup installation failed ($($p.ExitCode))" }
+          $iscc = Join-Path $dir "ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found" }
+
+          # The compiler installer does not include the unofficial .isl files
+          # referenced by this project's 78-language wizard. Fetch the complete
+          # upstream language set at a fixed source revision into the compiler's
+          # expected path, without vendoring those files in this repository.
+          $source = Join-Path $env:RUNNER_TEMP "innosetup-source"
+          git init $source
+          if ($LASTEXITCODE -ne 0) { throw "Could not initialize Inno Setup source checkout" }
+          git -C $source remote add origin https://github.com/jrsoftware/issrc.git
+          if ($LASTEXITCODE -ne 0) { throw "Could not configure Inno Setup source checkout" }
+          git -C $source fetch --depth=1 origin $env:INNO_TRANSLATIONS_COMMIT
+          if ($LASTEXITCODE -ne 0) { throw "Could not fetch pinned Inno Setup language sources" }
+          git -C $source sparse-checkout init --cone
+          if ($LASTEXITCODE -ne 0) { throw "Could not configure sparse Inno Setup source checkout" }
+          git -C $source sparse-checkout set Files/Languages
+          if ($LASTEXITCODE -ne 0) { throw "Could not select Inno Setup language sources" }
+          git -C $source checkout --detach FETCH_HEAD
+          if ($LASTEXITCODE -ne 0) { throw "Could not check out pinned Inno Setup language sources" }
+
+          $sourceLanguages = Join-Path $source "Files\Languages"
+          $compilerLanguages = Join-Path $dir "Languages"
+          New-Item -ItemType Directory -Force -Path $compilerLanguages | Out-Null
+          $languageFiles = @(Get-ChildItem -Path $sourceLanguages -File -Recurse | Where-Object { $_.Extension -in @(".isl", ".islu") })
+          if ($languageFiles.Count -ne 77) { throw "Expected 77 pinned Inno Setup language files, found $($languageFiles.Count)" }
+          $duplicateNames = @($languageFiles | Group-Object Name | Where-Object Count -gt 1)
+          if ($duplicateNames.Count -gt 0) { throw "Duplicate Inno Setup language filenames: $($duplicateNames.Name -join ', ')" }
+          foreach ($file in $languageFiles) { Copy-Item $file.FullName (Join-Path $compilerLanguages $file.Name) }
+          if (-not (Test-Path (Join-Path $compilerLanguages "Abkhazian.isl"))) { throw "Pinned Inno Setup language files were not staged correctly" }
+          "ISCC=$iscc" >> $env:GITHUB_ENV
+
+      - name: Build installer, gadget and ZIP
+        env:
+          APP_URL: ${{ github.server_url }}/${{ github.repository }}
+          # Read access to this repository's releases (needed while it is private).
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/build.py --require-installer
+
+      - name: Validate structure and the 20 gadget languages
+        run: python scripts/check_localization.py --gadget dist/source/Weather.gadget
+
+      - name: JavaScript validation and tests
+        run: npm test -- --gadget dist/source/Weather.gadget
+
+      - name: Python tests (repository, localization, packages, installer)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/run_tests.py
+
+      - name: JavaScript tests against the packaged gadget
+        run: node tests/js/run_all.cjs --gadget dist/stage/gadget/Weather.gadget
+
+      # Convenience copy for branch builds. Not required for releases (they are
+      # published below from this job), so a full artifact quota does not block them.
+      - name: Upload build artifacts
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 7
+          name: Win7WeatherGadget-${{ steps.version.outputs.version }}
+          path: |
+            dist/Win7WeatherGadget-Setup.exe
+            dist/Win7WeatherGadget-Portable.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Verify checksums
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        working-directory: dist
+        run: sha256sum -c SHA256SUMS.txt
+
+      - name: Release notes from the tag message
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # An annotated tag's message becomes the release notes.
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          if [ "$(git cat-file -t "refs/tags/$TAG")" = "tag" ]; then
+            git tag -l --format='%(contents)' "$TAG" | sed '/-----BEGIN PGP SIGNATURE-----/,$d' > release-notes.md
+          fi
+          if [ ! -s release-notes.md ] || ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "Release $VERSION" > release-notes.md
+          fi
+          cat release-notes.md
+
+      - name: Create or update GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag='${{ github.ref_name }}'
+          title="Windows 7 Weather Gadget ${tag#v}"
+          if [ '${{ steps.tag.outputs.prerelease }}' = 'true' ]; then
+            kind=(--prerelease)
+            title="$title (test build)"
+          else
+            kind=(--prerelease=false --latest)
+          fi
+          # v1.0.0 first published the build baseline (now kept in the build-baseline
+          # release, see scripts/build.py): never publish that version again.
+          if [ "$tag" = "v1.0.0" ]; then
+            echo "::error::v1.0.0 cannot be published again; publish a new version instead."
+            exit 1
+          fi
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/Win7WeatherGadget-Setup.exe dist/Win7WeatherGadget-Portable.zip --clobber
+            gh release edit "$tag" --title "$title" --notes-file release-notes.md "${kind[@]}"
+          else
+            gh release create "$tag" dist/Win7WeatherGadget-Setup.exe dist/Win7WeatherGadget-Portable.zip --title "$title" --notes-file release-notes.md --verify-tag "${kind[@]}"
+          fi

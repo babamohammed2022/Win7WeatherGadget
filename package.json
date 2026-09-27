@@ -1,0 +1,18 @@
+{
+  "name": "windows7-weather-gadget",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Tests for the Windows 7 Weather Gadget (the gadget itself has no Node.js dependency).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node tests/js/run_all.cjs",
+    "test:online": "node tests/js/test_gadget_integration.cjs --online"
+  },
+  "devDependencies": {
+    "acorn": "8.18.0",
+    "acorn-walk": "8.3.5"
+  }
+}
