@@ -1,6 +1,6 @@
 # Windows 7 Weather Gadget Restoration
 
-A multilingual restoration of the classic Windows Weather desktop gadget for Windows 7, and for Windows 10 and 11 with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
+A multilingual restoration of the classic Windows Weather desktop gadget for Windows 7, Windows 10 and Windows 11 with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
 
 Note: This is an independent, community-developed project aimed at restoring a classic interface for contemporary operating systems.
 
