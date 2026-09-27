@@ -3,8 +3,9 @@
 
 Steps
 -----
-1. Download the pinned v1.0.0 portable release asset as the gadget baseline,
-   verify its SHA-256, then overlay the project's own source files.
+1. Download the pinned portable ZIP (the "build-baseline" service release,
+   byte-identical to the portable asset first published with v1.0.0) as the
+   gadget baseline, verify its SHA-256, then overlay the project's own files.
 2. Validate the assembled source tree (required files, 20 locales, VERSION).
 3. Stage the gadget into dist/stage/gadget/Weather.gadget, converting the
    .js/.html/.css files from UTF-8 to UTF-16LE with BOM and CRLF line endings
@@ -52,12 +53,13 @@ OVERLAY_SRC = os.path.join(ROOT, "src", "Weather.gadget")
 DIST = os.path.join(ROOT, "dist")
 SRC = os.path.join(DIST, "source", "Weather.gadget")
 PAYLOAD_CACHE = os.path.join(ROOT, "dist", "cache", "Win7WeatherGadget-Portable-v1.0.0.zip")
-PAYLOAD_URL = "https://github.com/babamohammed2022/Win7WeatherGadget/releases/download/v1.0.0/Win7WeatherGadget-Portable.zip"
-# SHA-256 of the v1.0.0 portable asset as published (also reported by the
-# GitHub API as the asset "digest").
+PAYLOAD_URL = "https://github.com/babamohammed2022/Win7WeatherGadget/releases/download/build-baseline/Win7WeatherGadget-Portable.zip"
+# SHA-256 of the portable asset as first published with v1.0.0 and copied
+# unchanged to the build-baseline release (also reported by the GitHub API as
+# the asset "digest").
 PAYLOAD_SHA256 = "2fe82e2271cc051b5a170e31fc06a48fa901483a5e6f4409d146770dedb0b40d"
 PAYLOAD_REPO = "babamohammed2022/Win7WeatherGadget"
-PAYLOAD_TAG = "v1.0.0"
+PAYLOAD_TAG = "build-baseline"
 PAYLOAD_ASSET = "Win7WeatherGadget-Portable.zip"
 PAYLOAD_PREFIX = "Win7WeatherGadget-Portable/Gadget/Weather.gadget/"
 STAGE = os.path.join(DIST, "stage")
@@ -232,7 +234,7 @@ def obtain_payload(explicit=None):
                     os.remove(path + ".tmp")
                 except OSError:
                     pass
-                raise BuildError("cannot download the pinned v1.0.0 portable payload: %s" % exc)
+                raise BuildError("cannot download the pinned portable payload (release %s): %s" % (PAYLOAD_TAG, exc))
     digest = hashlib.sha256(_read(path, "rb")).hexdigest()
     if digest != PAYLOAD_SHA256:
         raise BuildError("portable payload SHA-256 mismatch: " + digest)

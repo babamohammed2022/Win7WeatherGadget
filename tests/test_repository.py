@@ -34,7 +34,7 @@ from unittest import mock
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Reconstructed from the hash-pinned v1.0.0 portable asset by the build step.
+# Reconstructed from the hash-pinned baseline portable asset by the build step.
 SRC = os.path.join(ROOT, "dist", "source", "Weather.gadget")
 LOCALES = [
     "en-US", "it-IT", "de-DE", "fr-FR", "es-ES", "pt-BR", "nl-NL", "pl-PL",
@@ -423,7 +423,7 @@ class ReleasePackagingTests(unittest.TestCase):
 
     def test_build_bootstraps_from_the_pinned_portable_release(self):
         build = load_build_module()
-        self.assertIn("/releases/download/v1.0.0/Win7WeatherGadget-Portable.zip", build.PAYLOAD_URL)
+        self.assertIn("/releases/download/build-baseline/Win7WeatherGadget-Portable.zip", build.PAYLOAD_URL)
         self.assertEqual(64, len(build.PAYLOAD_SHA256))
         workflow = read_text(os.path.join(ROOT, ".github", "workflows", "build.yml"), encoding="utf-8")
         self.assertIn("python scripts/build.py --require-installer", workflow)

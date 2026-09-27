@@ -35,9 +35,9 @@ On a real Windows 7 the gadget platform is part of Windows, so nothing else is i
 
 ## Building from Source
 
-Requirements: Python 3.8+, Node.js 18+ for tests, Inno Setup 6 to compile the installer, and internet access to fetch the pinned v1.0.0 portable package used as the binary gadget baseline.
+Requirements: Python 3.8+, Node.js 18+ for tests, Inno Setup 6 to compile the installer, and internet access to fetch the pinned portable package used as the binary gadget baseline (the `build-baseline` service release).
 
-The repository keeps the project's own overlays, scripts, tests, and documentation rather than a duplicate copy of Microsoft's full gadget payload. The Windows installer and portable release assets still contain the complete gadget. Builds fetch the v1.0.0 portable asset (authenticated with `GH_TOKEN` or `GITHUB_TOKEN` while the repository is private) and verify its SHA-256 before applying the project's overlays; the MediaFire archive is only a source reference and is not a build dependency.
+The repository keeps the project's own overlays, scripts, tests, and documentation rather than a duplicate copy of Microsoft's full gadget payload. The Windows installer and portable release assets still contain the complete gadget. Builds fetch the pinned portable asset from the `build-baseline` service release, byte-identical to the one first published with v1.0.0 (authenticated with `GH_TOKEN` or `GITHUB_TOKEN` while the repository is private) and verify its SHA-256 before applying the project's overlays; the MediaFire archive is only a source reference and is not a build dependency.
 
 ```bat
 npm ci

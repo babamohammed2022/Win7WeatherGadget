@@ -191,9 +191,10 @@ jobs:
           else
             kind=(--prerelease=false --latest)
           fi
-          # v1.0.0 is the pinned build baseline (scripts/build.py): never replace its assets.
+          # v1.0.0 first published the build baseline (now kept in the build-baseline
+          # release, see scripts/build.py): never publish that version again.
           if [ "$tag" = "v1.0.0" ]; then
-            echo "::error::v1.0.0 is the pinned build baseline; publish a new version instead."
+            echo "::error::v1.0.0 cannot be published again; publish a new version instead."
             exit 1
           fi
           if gh release view "$tag" >/dev/null 2>&1; then

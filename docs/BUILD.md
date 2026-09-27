@@ -10,7 +10,7 @@
 | Node.js | 18 or newer | JavaScript tests |
 | Internet access | GitHub release asset | downloading the pinned gadget baseline |
 
-The source repository intentionally keeps the project's own gadget overlays rather than a duplicate copy of Microsoft's full gadget payload. The build assembles `dist/source/Weather.gadget` from the portable ZIP of the published v1.0.0 release, verifies its fixed SHA-256, and overlays the project-owned files from `src/Weather.gadget/`. This uses the project's GitHub release, not the MediaFire reference archive. The built installer and portable package contain the complete gadget.
+The source repository intentionally keeps the project's own gadget overlays rather than a duplicate copy of Microsoft's full gadget payload. The build assembles `dist/source/Weather.gadget` from the portable ZIP held by the `build-baseline` service release (byte-identical to the portable asset first published with v1.0.0), verifies its fixed SHA-256, and overlays the project-owned files from `src/Weather.gadget/`. This uses the project's GitHub release, not the MediaFire reference archive. The built installer and portable package contain the complete gadget.
 
 ## Build
 
@@ -20,7 +20,7 @@ python scripts\build.py
 
 Steps:
 
-1. fetch the pinned v1.0.0 portable release asset (or use a provided local copy) and verify its SHA-256;
+1. fetch the pinned portable ZIP from the `build-baseline` release (or use a provided local copy) and verify its SHA-256;
 2. reconstruct the gadget source under `dist\source\Weather.gadget` and apply the project's overlays;
 3. validate required files, the 20 gadget locales, and `VERSION`;
 4. stage the gadget into `dist\stage\gadget\Weather.gadget`, converting `.js`, `.html` and `.css` to UTF-16LE with BOM and CRLF;
@@ -28,7 +28,7 @@ Steps:
 6. compile `installer\Setup.iss` into `dist\Win7WeatherGadget-Setup.exe` when ISCC is found;
 7. verify the outputs and write `dist\SHA256SUMS.txt`.
 
-The portable ZIP used as the baseline is pinned in `scripts/build.py` by both a fixed v1.0.0 URL and SHA-256. To use an already-downloaded copy:
+The portable ZIP used as the baseline is pinned in `scripts/build.py` by both a fixed `build-baseline` URL and SHA-256. To use an already-downloaded copy:
 
 ```bat
 python scripts\build.py --payload-zip C:\path\Win7WeatherGadget-Portable.zip
@@ -36,7 +36,7 @@ python scripts\build.py --payload-zip C:\path\Win7WeatherGadget-Portable.zip
 
 The file must match the pinned hash. `W7WEATHER_PAYLOAD_ZIP` can be used instead of `--payload-zip`. The build never downloads from MediaFire.
 
-While the repository is private, the public download URL answers 404. Set `GH_TOKEN` or `GITHUB_TOKEN` (read access to the repository is enough) and the build fetches the same asset through the authenticated GitHub API; CI passes the workflow token. The pinned SHA-256 is the digest GitHub reports for the published v1.0.0 asset. Never re-upload assets to the v1.0.0 release: the build baseline would change and every build would fail the checksum.
+While the repository is private, the public download URL answers 404. Set `GH_TOKEN` or `GITHUB_TOKEN` (read access to the repository is enough) and the build fetches the same asset through the authenticated GitHub API; CI passes the workflow token. The pinned SHA-256 is the digest GitHub reports for the asset. `build-baseline` is a pre-release reserved for the build (it never becomes the latest release and is not meant for users): never delete it and never replace its asset, or every build would fail. It was created from the v1.0.0 asset by a one-off workflow that verified the same SHA-256; the user-facing v1.0.0 release has since been removed.
 
 The generated archives are reproducible: files are sorted, timestamps are fixed (1 January 2010, or `SOURCE_DATE_EPOCH`), and permissions are normalized. The EXE contains build timestamps and differs between builds.
 
