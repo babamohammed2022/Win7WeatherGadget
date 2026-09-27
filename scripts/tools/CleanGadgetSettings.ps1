@@ -51,7 +51,12 @@ if (-not (Test-Path -LiteralPath $SettingsPath)) {
 }
 
 # --- read, remembering the encoding -----------------------------------------
-$bytes = [System.IO.File]::ReadAllBytes($SettingsPath)
+try {
+    $bytes = [System.IO.File]::ReadAllBytes($SettingsPath)
+} catch {
+    Write-Host "  Cannot read the settings file: $($_.Exception.Message)"
+    exit 1
+}
 if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) {
     $encoding = New-Object System.Text.UnicodeEncoding($false, $true)
 } elseif ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFE -and $bytes[1] -eq 0xFF) {
@@ -140,13 +145,32 @@ for ($i = 0; $i -lt $keep.Count; $i++) {
 }
 
 # --- backup and write -------------------------------------------------------
+# The file is never changed without a backup, and a failed write puts the
+# original content back, so settings.ini is never left half-written.
 $backup = "$SettingsPath.bak-before-removing-weather"
-Copy-Item -LiteralPath $SettingsPath -Destination $backup -Force
+try {
+    Copy-Item -LiteralPath $SettingsPath -Destination $backup -Force -ErrorAction Stop
+} catch {
+    Write-Host "  Cannot create the backup, settings file left unchanged: $($_.Exception.Message)"
+    exit 1
+}
 
 $newText = ($keep -join "`r`n")
 $newText = $newText -replace "(`r`n){3,}", "`r`n`r`n"
 $outBytes = $encoding.GetPreamble() + $encoding.GetBytes($newText)
-[System.IO.File]::WriteAllBytes($SettingsPath, [byte[]]$outBytes)
+try {
+    [System.IO.File]::WriteAllBytes($SettingsPath, [byte[]]$outBytes)
+} catch {
+    Write-Host "  Cannot write the settings file: $($_.Exception.Message)"
+    try {
+        Copy-Item -LiteralPath $backup -Destination $SettingsPath -Force -ErrorAction Stop
+        Write-Host "  The original settings file was restored."
+    } catch {
+        Write-Host "  The original settings file is saved in:"
+        Write-Host "    $backup"
+    }
+    exit 1
+}
 
 Write-Host "  Backup saved to:"
 Write-Host "    $backup"

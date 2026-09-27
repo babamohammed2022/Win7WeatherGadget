@@ -230,5 +230,46 @@ const { createGadget, createRunner, fixture, fixtureResponder, NETWORK_THROWS, N
     (qres.item(0).LocationCode + '|' + qres.item(0).ZipCode).indexOf("'") < 0 && qres.item(0).Location === 'L\u2019Aquila, Abruzzo, Italia',
     qres.item(0).Location);
 
+  // --- incomplete answers and errors in the gadget's callback ---------------
+  // Valid JSON without the expected fields must still end in a result for the
+  // gadget (otherwise it would wait forever on "Getting data...").
+  const partial = createGadget({ responder: () => ({ status: 200, body: JSON.stringify({ daily: { time: ['2026-09-27'] } }) }) });
+  const partialCalls = start(partial, '41.9,12.5|Roma');
+  await partial.advance(0);
+  r.check('forecast answer without temperatures -> failure result, no exception',
+    partialCalls().length === 1 && partialCalls()[0].RetCode === C.unavailable && partial.scriptErrors.length === 0,
+    JSON.stringify(partialCalls().map((d) => d.RetCode)) + ' ' + partial.scriptErrors.join(';'));
+
+  // An exception thrown by OnDataReady is still reported (from a timer, like
+  // IE does) but the shim finishes its own work first: retries go on.
+  const throwing = createGadget({ responder: () => null });
+  throwing.useVirtualClock();
+  throwing.run('var __n = 0; var __shim = new WLServicesShim().GetService("weather");' +
+    ' __shim.OnDataReady = function (d) { __n++; throw new Error("boom in OnDataReady"); }; __shim.SearchByCode("41.9,12.5|Roma");');
+  await throwing.advance(C.report + C.background);
+  r.check('OnDataReady throws: the error is still reported',
+    throwing.run('__n') >= 1 && throwing.scriptErrors.some((e) => /boom in OnDataReady/.test(e && e.message)),
+    throwing.scriptErrors.join(';'));
+  r.check('OnDataReady throws: the background retry stays scheduled',
+    throwing.pendingTimers().some((t) => !t.repeat && t.ms === C.background));
+
+  const okThrow = createGadget();
+  okThrow.useVirtualClock();
+  okThrow.run('var __n = 0; var __shim = new WLServicesShim().GetService("weather");' +
+    ' __shim.OnDataReady = function (d) { __n++; throw new Error("boom after data"); }; __shim.SearchByCode("41.9,12.5|Roma");');
+  await okThrow.advance(0);
+  r.check('OnDataReady throws on success: called once, error reported, shim state is "available"',
+    okThrow.run('__n') === 1 && okThrow.run('__shim._unavailable') === false &&
+    okThrow.scriptErrors.length === 1 && /boom after data/.test(okThrow.scriptErrors[0].message));
+
+  const noCoords = createGadget({ responder: () => ({ status: 200, body: JSON.stringify({ results: [{ name: 'Nowhere' }] }) }) });
+  const ncres = await noCoords.search('SearchByLocation', 'Nowhere');
+  r.check('geocoding result without coordinates -> service unavailable, no exception',
+    ncres.RetCode === C.unavailable && ncres.Count === 0 && noCoords.scriptErrors.length === 0);
+  const revNull = createGadget({ responder: () => ({ status: 200, body: 'null' }) });
+  const rnres = await revNull.search('SearchByLocation', '48.8566, 2.3522');
+  r.check('reverse geocoding answer "null" -> service unavailable, no exception',
+    rnres.RetCode === C.unavailable && revNull.scriptErrors.length === 0);
+
   r.done();
 })().catch((e) => { console.error(e); process.exit(1); });

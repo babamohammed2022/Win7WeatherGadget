@@ -27,6 +27,8 @@ English, Italian, German, French, Spanish, Brazilian Portuguese, Dutch, Polish, 
 
 ## Compatibility
 
+**Tested on Windows 7 and Windows 10.** Windows 11 should work with the same gadget runtimes as Windows 10, but it has not been tested yet.
+
 Windows 10 and Windows 11 require a separate Windows Sidebar-compatible gadget runtime, such as Gadgets Revived or 8GadgetPack. The runtime is not bundled with this project. On 64-bit Windows the installer and the scripts only start the 64-bit `sidebar.exe`: GadgetPack 38 no longer runs its 32-bit version. Internet access is required for weather and location services.
 
 On a real Windows 7 the gadget platform is part of Windows, so nothing else is installed or downloaded. If the platform has been turned off (the *Windows Gadget Platform* feature, or the `TurnOffSidebar` policy set by Microsoft Fix it 50906), the installer explains how to turn it back on. Windows 7 also keeps Microsoft's original Weather gadget, which no longer receives data: the gadget gallery may then show two Weather gadgets with the same icon. Use **Show details** in the gallery; the description of this gadget ends with "Weather data by Open-Meteo." (translated in each language). The location sensor of Windows 7 is supported. Windows 7 needs TLS 1.2 for the weather services: it is on by default with Internet Explorer 11 (Internet Options > Advanced > Use TLS 1.2).

@@ -2,6 +2,7 @@
 ========================
 
 The Windows 7 Weather gadget for Windows 7, Windows 10 and Windows 11.
+Tested on Windows 7 and Windows 10.
 The original Microsoft gadget is kept as it was; only its data source was
 replaced, because the MSN weather service it used has been shut down.
 

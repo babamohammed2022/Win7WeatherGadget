@@ -35,6 +35,7 @@ Only the Python standard library is used.
 """
 
 import argparse
+import contextlib
 import hashlib
 import io
 import json
@@ -176,6 +177,7 @@ def _http_get(url, headers, target=None):
                 if urlsplit(url).netloc != host:
                     headers = {k: v for k, v in headers.items() if k.lower() != "authorization"}
                     host = urlsplit(url).netloc
+                exc.close()   # the redirect answer is not needed any more
                 continue
             raise
         with response:
@@ -434,7 +436,8 @@ def write_text(target, text, bom=False, crlf=True):
 
 
 def read_text(path):
-    return io.open(os.path.join(ROOT, path), encoding="utf-8-sig", newline="").read()
+    with io.open(os.path.join(ROOT, path), encoding="utf-8-sig", newline="") as fh:
+        return fh.read()
 
 
 def stage_extras():
@@ -470,6 +473,19 @@ def stage_extras():
 # 3./4. archives
 # ---------------------------------------------------------------------------
 
+@contextlib.contextmanager
+def removed_on_error(path):
+    """Deletes a half-written output file when building it fails."""
+    try:
+        yield
+    except BaseException:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+        raise
+
+
 def add_file(zf, arcname, path):
     info = zipfile.ZipInfo(arcname, date_time=time.gmtime(ZIP_EPOCH)[:6])
     info.compress_type = zipfile.ZIP_DEFLATED
@@ -482,7 +498,7 @@ def build_gadget_archive():
     target = os.path.join(DIST, GADGET_ARCHIVE)
     if os.path.exists(target):
         os.remove(target)
-    with zipfile.ZipFile(target, "w") as zf:
+    with removed_on_error(target), zipfile.ZipFile(target, "w") as zf:
         for path in iter_files(STAGE_GADGET):
             add_file(zf, rel(path, STAGE_GADGET), path)
     log("created %s" % rel(os.path.join(DIST, GADGET_ARCHIVE)))
@@ -495,7 +511,7 @@ def build_zip_package():
     if os.path.exists(target):
         os.remove(target)
     top = ZIP_TOP + "/"
-    with zipfile.ZipFile(target, "w") as zf:
+    with removed_on_error(target), zipfile.ZipFile(target, "w") as zf:
         for name in ("Launch.cmd", "Remove.cmd"):
             add_file(zf, top + name, os.path.join(STAGE, "portable", name))
         add_file(zf, top + "README.txt", os.path.join(STAGE, "portable", "README.txt"))
@@ -541,7 +557,10 @@ def find_iscc(explicit):
 def to_iscc_path(argv, path):
     """Converts a path for ISCC; under Wine, POSIX paths become Z:\\... paths."""
     if argv[0].lower() == "wine":
-        out = subprocess.run(["winepath", "-w", path], capture_output=True, text=True)
+        try:
+            out = subprocess.run(["winepath", "-w", path], capture_output=True, text=True)
+        except OSError:
+            return path   # winepath missing: same fallback as a failed conversion
         if out.returncode == 0 and out.stdout.strip():
             return out.stdout.strip()
     return path

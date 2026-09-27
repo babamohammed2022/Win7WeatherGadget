@@ -2,6 +2,7 @@
 =========================
 
 Il gadget Meteo di Windows 7 per Windows 7, Windows 10 e Windows 11.
+Provato su Windows 7 e Windows 10.
 Il gadget originale Microsoft è rimasto com'era; è stata sostituita solo la
 fonte dei dati, perché il servizio meteo MSN che usava è stato chiuso.
 

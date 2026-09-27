@@ -99,6 +99,26 @@ WLServicesShim._safeLabel = function (text) {
 	return String(text).replace(/'/g, "\u2019").replace(/[\\|\r\n]/g, " ");
 };
 
+// Writes to the gadget debug output; never throws (System.Debug may be missing).
+WLServicesShim._log = function (message) {
+	try { System.Debug.outputString(message); } catch (e) { /* ignored */ }
+};
+
+// Calls a gadget callback. If the callback throws, the error is raised again
+// from a separate timer, like IE reports it, but only after the shim has
+// finished its own work (retry timers, state): an error in the gadget's code
+// can never leave the shim half-way.
+WLServicesShim._invoke = function (callback, value) {
+	if (typeof callback !== "function") { return; }
+	try {
+		callback(value);
+	} catch (callbackErr) {
+		WLServicesShim._log("Weather gadget: error in OnDataReady (" +
+			(callbackErr && callbackErr.message ? callbackErr.message : callbackErr) + ")");
+		try { setTimeout(function () { throw callbackErr; }, 0); } catch (timerErr) { /* ignored */ }
+	}
+};
+
 WLServicesShim.prototype._cancelRetry = function () {
 	if (this._retryTimer !== null) {
 		try { clearTimeout(this._retryTimer); } catch (e) { /* ignored */ }
@@ -572,7 +592,7 @@ WLServicesShim.prototype.SearchByCode = function (code) {
 	function current() { return generation === self._forecastGeneration; }
 
 	function deliver(result) {
-		if (typeof self.OnDataReady === "function") { self.OnDataReady(result); }
+		WLServicesShim._invoke(self.OnDataReady, result);
 	}
 
 	function scheduleRetry(delay) {
@@ -589,7 +609,7 @@ WLServicesShim.prototype.SearchByCode = function (code) {
 
 	function onFailure(err) {
 		if (!current()) { return; }
-		System.Debug.outputString("Weather gadget: failed to retrieve weather data (" + (err && err.message ? err.message : err) + ")");
+		WLServicesShim._log("Weather gadget: failed to retrieve weather data (" + (err && err.message ? err.message : err) + ")");
 		if (!WLServicesShim._isTransientError(err)) {
 			// Retrying will not help; weather.js polls the service by itself.
 			failureReported = true;
@@ -621,8 +641,12 @@ WLServicesShim.prototype.SearchByCode = function (code) {
 					onFailure(apiErr);
 					return;
 				}
-				var result = WLServicesShim._buildForecastResultObject(json, label, lat, lon);
-				if (result.RetCode !== 200) {
+				// An answer that is valid JSON but incomplete (missing arrays) must
+				// end in a result for the gadget, never in an exception.
+				var result = null;
+				try { result = WLServicesShim._buildForecastResultObject(json, label, lat, lon); }
+				catch (buildErr) { result = null; }
+				if (!result || result.RetCode !== 200) {
 					var dataErr = new Error("no forecast data in the answer");
 					dataErr.apiError = true;
 					onFailure(dataErr);
@@ -676,13 +700,23 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 
 	function respond(items) {
 		var result = comAliases({ RetCode: 200, Count: items.length, item: function (i) { return items[i]; } });
-		if (typeof self.OnDataReady === "function") { self.OnDataReady(result); }
+		WLServicesShim._invoke(self.OnDataReady, result);
 	}
 
 	function respondEmpty(retCode) {
-		if (typeof self.OnDataReady === "function") {
-			self.OnDataReady(comAliases({ RetCode: retCode || 200, Count: 0, item: function () { return undefined; } }));
-		}
+		WLServicesShim._invoke(self.OnDataReady,
+			comAliases({ RetCode: retCode || 200, Count: 0, item: function () { return undefined; } }));
+	}
+
+	// Builds the items from an answer; an incomplete answer (for example a
+	// result without coordinates) is reported as "service not available"
+	// instead of throwing, so the search never waits forever.
+	function respondWith(build) {
+		var items = null;
+		try { items = build(); } catch (buildErr) { items = null; }
+		if (items === null) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
+		else if (items.length === 0) { respondEmpty(200); }
+		else { respond(items); }
 	}
 
 	if (coordMatch) {
@@ -694,8 +728,10 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 			encodeURIComponent(WLServicesShim._text("ReverseGeocodingLanguage", "en"));
 		WLServicesShim._xhrGet(url,
 			function (json) {
-				var name = json.city || json.locality || json.principalSubdivision || WLServicesShim._text("CurrentLocation", "Current location");
-				respond([makeItem(name, lat, lon, true)]);
+				respondWith(function () {
+					var name = json.city || json.locality || json.principalSubdivision || WLServicesShim._text("CurrentLocation", "Current location");
+					return [makeItem(name, lat, lon, true)];
+				});
 			},
 			function (err) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
 		);
@@ -706,16 +742,18 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 			encodeURIComponent(decoded);
 		WLServicesShim._xhrGet(geoUrl,
 			function (json) {
-				if (!json.results || json.results.length === 0) { respondEmpty(200); return; }
-				var items = [];
-				for (var i = 0; i < json.results.length; i++) {
-					var r = json.results[i];
-					var label = r.name +
-						(r.admin1 ? ", " + r.admin1 : "") +
-						(r.country ? ", " + r.country : "");
-					items.push(makeItem(label, r.latitude, r.longitude));
-				}
-				respond(items);
+				respondWith(function () {
+					var items = [];
+					if (!json.results || json.results.length === 0) { return items; }
+					for (var i = 0; i < json.results.length; i++) {
+						var r = json.results[i];
+						var label = r.name +
+							(r.admin1 ? ", " + r.admin1 : "") +
+							(r.country ? ", " + r.country : "");
+						items.push(makeItem(label, r.latitude, r.longitude));
+					}
+					return items;
+				});
 			},
 			function (err) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
 		);

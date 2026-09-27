@@ -3,6 +3,7 @@ Windows 7 Weather Gadget - Portable Package
 
 This ZIP does not use the traditional setup wizard. Extract the complete
 Win7WeatherGadget-Portable folder, then run Launch.cmd.
+Tested on Windows 7 and Windows 10.
 
 REQUIRED RUNTIME
 Windows 10 and Windows 11 do not include a Windows Sidebar gadget runtime.
