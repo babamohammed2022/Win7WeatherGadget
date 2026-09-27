@@ -11,6 +11,9 @@
 // so the tests are deterministic and work offline. The integration test can
 // switch to real HTTPS requests with --online.
 //
+// Timers run on a virtual clock: nothing fires unless a test calls
+// advance(ms), which runs the due setTimeout/setInterval callbacks in order.
+//
 // Gadget folder: reconstructed dist/source by default after a build (UTF-8),
 // or an explicit folder via --gadget / GADGET_DIR.
 ////////////////////////////////////////////////////////////////////////////////
@@ -20,6 +23,10 @@ const path = require('path');
 const vm = require('vm');
 
 const REPO = path.resolve(__dirname, '..', '..');
+
+// Special responder answers (see createGadget).
+const NETWORK_THROWS = { special: 'throws' };
+const NETWORK_HANGS = { special: 'hangs' };
 
 const LOCALES = [
   'en-US', 'it-IT', 'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'nl-NL', 'pl-PL',
@@ -110,7 +117,10 @@ function makeElement(id, tag) {
 // Creates a sandbox and loads the given gadget scripts.
 //   options.locale     locale whose localizedStrings.js is loaded (default en-US)
 //   options.responder  url -> {status, body} | null  (null = network error),
-//                      or (url, done) when options.async is true
+//                      or (url, done) when options.async is true.
+//                      Special answers: NETWORK_THROWS (reading .status throws,
+//                      like MSXML when the host cannot be resolved) and
+//                      NETWORK_HANGS (the request never completes).
 //   options.scripts    list of gadget-relative script paths after localizedStrings.js
 //   options.html       page whose element ids are exposed as globals (IE behavior)
 //   options.strings    function (L_localizedStrings_Text) to alter the strings
@@ -122,19 +132,29 @@ function createGadget(options) {
   const debug = [];
   const elements = new Map();
   const responder = options.responder || fixtureResponder;
+  const scriptErrors = [];   // errors thrown by callbacks run by the fake host
 
   function FakeXHR() { this.readyState = 0; this.status = 0; this.onreadystatechange = null; this.headers = {}; }
   FakeXHR.prototype.open = function (method, url) { this.method = method; this.url = url; };
   FakeXHR.prototype.setRequestHeader = function (k, v) { this.headers[k] = v; };
   FakeXHR.prototype.setTimeouts = function () {};
+  FakeXHR.prototype.abort = function () { this.aborted = true; };
   FakeXHR.prototype.send = function () {
     const self = this;
     requests.push({ url: this.url, headers: this.headers });
     const finish = (r) => {
+      if (r === NETWORK_HANGS) return;
       self.readyState = 4;
-      self.status = r ? r.status : 0;
-      self.responseText = r ? r.body : '';
-      if (self.onreadystatechange) self.onreadystatechange();
+      if (r === NETWORK_THROWS) {
+        const fail = () => { throw new Error('The server name or address could not be resolved'); };
+        Object.defineProperty(self, 'status', { get: fail, configurable: true });
+        Object.defineProperty(self, 'responseText', { get: fail, configurable: true });
+      } else {
+        self.status = r ? r.status : 0;
+        self.responseText = r ? r.body : '';
+      }
+      // Like IE, an error inside the callback does not stop the page.
+      try { if (self.onreadystatechange) self.onreadystatechange(); } catch (e) { scriptErrors.push(e); }
     };
     if (options.async) responder(this.url, finish);
     else setImmediate(() => finish(responder(this.url)));
@@ -154,7 +174,19 @@ function createGadget(options) {
     attachEvent() {}
   };
 
+  // Virtual clock and timers (see advance()).
   const timers = [];
+  let clock = 0;
+  let timerSeq = 0;
+  function addTimer(fn, ms, repeat) {
+    const t = { id: ++timerSeq, fn, ms: Math.max(0, Number(ms) || 0), due: 0, repeat: !!repeat, cleared: false };
+    t.due = clock + t.ms;
+    timers.push(t);
+    return t.id;
+  }
+  function clearTimer(id) {
+    for (const t of timers) if (t.id === id) t.cleared = true;
+  }
   const sandbox = {
     console, document,
     navigator: { userAgent: 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1)' },
@@ -165,9 +197,11 @@ function createGadget(options) {
       if (/xmlhttp/i.test(progId)) return new FakeXHR();
       throw new Error('Automation server can\'t create object: ' + progId);
     },
-    setTimeout: (fn, ms) => { timers.push({ fn, ms }); return timers.length; },
-    clearTimeout: () => {},
-    setInterval: () => 1, clearInterval: () => {},
+    setTimeout: (fn, ms) => addTimer(fn, ms, false),
+    clearTimeout: (id) => clearTimer(id),
+    setInterval: (fn, ms) => addTimer(fn, ms, true),
+    clearInterval: (id) => clearTimer(id),
+    __clock: () => clock,
     alert: () => {},
     System: {
       Debug: { outputString: (s) => { debug.push(String(s)); } },
@@ -211,9 +245,42 @@ function createGadget(options) {
     vm.runInContext(readText(path.join(dir, s)), ctx, { filename: s });
   }
 
+  function pending() { return timers.filter((t) => !t.cleared); }
+
   return {
-    dir, ctx, sandbox, document, requests, settings, debug, timers,
+    dir, ctx, sandbox, document, requests, settings, debug, timers, scriptErrors,
     run(code) { return vm.runInContext(code, ctx); },
+    now() { return clock; },
+    pendingTimers: pending,
+    // Makes the shim measure time on the virtual clock.
+    useVirtualClock() { vm.runInContext('WLServicesShim._now = function () { return __clock(); };', ctx); },
+    // Advances the virtual clock by ms, running every due timer in order and
+    // letting simulated network answers (setImmediate) arrive in between.
+    // String callbacks are evaluated like IE does; their errors are recorded
+    // in scriptErrors instead of stopping the test.
+    async advance(ms) {
+      const target = clock + ms;
+      // Simulated answers arrive through setImmediate, one request at a time
+      // (a failing request moves to the next XMLHTTP ProgID): let them all
+      // settle before the virtual clock moves on.
+      const settle = async () => { for (let i = 0; i < 25; i++) await new Promise((res) => setImmediate(res)); };
+      for (;;) {
+        await settle();
+        const due = pending().filter((t) => t.due <= target).sort((a, b) => a.due - b.due || a.id - b.id)[0];
+        if (!due) break;
+        clock = Math.max(clock, due.due);
+        if (due.repeat) due.due = clock + Math.max(1, due.ms); else due.cleared = true;
+        try {
+          if (typeof due.fn === 'function') due.fn();
+          else vm.runInContext(String(due.fn), ctx);
+        } catch (e) {
+          scriptErrors.push(e);
+          if (due.repeat) continue;
+        }
+      }
+      clock = target;
+      await settle();
+    },
     // Runs a shim search and resolves with the object passed to OnDataReady.
     search(method, arg, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -246,6 +313,7 @@ function createRunner(title) {
 }
 
 module.exports = {
+  NETWORK_THROWS, NETWORK_HANGS,
   REPO, LOCALES, ROOT_LOCALE, gadgetDir, readText, fixture, localizedStringsPath,
   fixtureResponder, onlineResponder, createGadget, createRunner, makeElement
 };

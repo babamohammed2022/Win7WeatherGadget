@@ -5,12 +5,14 @@
 // Covers: weather-code mapping, localized texts and their English fallback,
 // COM-style lower-case aliases, location-code parsing, the requests sent to
 // Open-Meteo / BigDataCloud, the result objects returned to the gadget and
-// the error paths (network failure, HTTP errors, legacy MSN codes).
+// the error paths (network failure, HTTP errors, legacy MSN codes), and the
+// recovery after a restart while the network is not ready yet (retries,
+// watchdog, failure reporting that lets weather.js poll the service).
 ////////////////////////////////////////////////////////////////////////////////
 
 const fs = require('fs');
 const path = require('path');
-const { createGadget, createRunner, fixture } = require('./helpers.cjs');
+const { createGadget, createRunner, fixture, fixtureResponder, NETWORK_THROWS, NETWORK_HANGS } = require('./helpers.cjs');
 
 (async () => {
   const r = createRunner('wlservices_shim.js unit tests');
@@ -92,16 +94,92 @@ const { createGadget, createRunner, fixture } = require('./helpers.cjs');
   r.check('legacy MSN code falls back to the localized default location', /latitude=52\.52&longitude=13\.405/.test(legacy.requests[0].url) &&
     lres.item(0).Location === 'Berlin', legacy.requests[0].url);
 
+  // --- network failures, retries and recovery ------------------------------
+  // The timers of the sandbox run on a virtual clock (helpers.cjs advance()).
+  const C = legacy.run('({ report: WLServicesShim.REPORT_FAILURE_AFTER_MS, background: WLServicesShim.BACKGROUND_RETRY_MS,' +
+    ' timeout: WLServicesShim.REQUEST_TIMEOUT_MS, unavailable: WLServicesShim.RETCODE_UNAVAILABLE })');
+  r.check('failure code is not 1506/1507/200 (weather.js only polls for other codes)',
+    [200, 1506, 1507].indexOf(C.unavailable) < 0, C.unavailable);
+
+  // Starts SearchByCode on a new shim object and records every OnDataReady call.
+  function start(gadget, code) {
+    gadget.useVirtualClock();
+    gadget.run('var __calls = []; var __shim = new WLServicesShim().GetService("weather");' +
+      ' __shim.OnDataReady = function (d) { __calls.push(d); }; __shim.SearchByCode(' + JSON.stringify(code) + ');');
+    return () => gadget.run('__calls');
+  }
+  function forecastRequests(gadget) { return gadget.requests.filter((q) => /api\.open-meteo\.com/.test(q.url)).length; }
+
   const down = createGadget({ responder: () => null });
-  const dres = await down.search('SearchByCode', '41.9,12.5|Roma');
-  r.check('network failure -> RetCode 1506 (the gadget shows "service not available")', dres.RetCode === 1506 && dres.Count === 0);
+  const downCalls = start(down, '41.9,12.5|Roma');
+  await down.advance(C.report - 1000);
+  r.check('network down: no answer yet, the shim keeps retrying (gadget shows "Getting data...")',
+    downCalls().length === 0 && forecastRequests(down) > 5, forecastRequests(down));
+  await down.advance(C.background);
+  const dres = downCalls()[0];
+  r.check('network down: failure reported after the retry window, not 1506',
+    downCalls().length === 1 && dres.RetCode === C.unavailable && dres.Count === 0 && dres.count === 0);
   r.check('network failure is logged in English', /failed to retrieve weather data/.test(down.debug.join('\n')));
+  r.check('network down: a background retry stays scheduled', down.pendingTimers().some((t) => !t.repeat && t.ms === C.background));
+  down.run('__shim.SearchByCode("41.9,12.5|Roma")');
+  await down.advance(0);
+  r.check('once the failure is known, a new request (gadget polling) is answered at once',
+    downCalls().length === 2 && downCalls()[1].RetCode === C.unavailable, downCalls().length);
+
+  const boot = createGadget({ responder: (u) => (boot.now() < 20000 ? null : fixtureResponder(u)) });
+  const bootCalls = start(boot, '41.9,12.5|Roma');
+  await boot.advance(40000);
+  r.check('network ready 20 s after start (reboot): weather delivered without any error',
+    bootCalls().length === 1 && bootCalls()[0].RetCode === 200 && bootCalls()[0].item(0).Location === 'Roma',
+    JSON.stringify(bootCalls().map((d) => d.RetCode)));
+  r.check('after success no retry is left pending', !boot.pendingTimers().some((t) => !t.repeat && t.ms !== C.timeout));
+
+  const late = createGadget({ responder: (u) => (late.now() < C.report + 30000 ? null : fixtureResponder(u)) });
+  const lateCalls = start(late, '41.9,12.5|Roma');
+  await late.advance(C.report + 30000 + C.background + 1000);
+  r.check('network back after the error was shown: the background retry delivers the weather',
+    lateCalls().length === 2 && lateCalls()[0].RetCode === C.unavailable && lateCalls()[1].RetCode === 200,
+    JSON.stringify(lateCalls().map((d) => d.RetCode)));
+
+  const throws = createGadget({ responder: () => NETWORK_THROWS });
+  const throwsCalls = start(throws, '41.9,12.5|Roma');
+  await throws.advance(C.report + C.background);
+  r.check('reading .status throws (MSXML, host not resolved): reported as a failure, never stuck',
+    throwsCalls().length >= 1 && throwsCalls()[0].RetCode === C.unavailable);
+
+  const hangs = createGadget({ responder: () => NETWORK_HANGS });
+  const hangsCalls = start(hangs, '41.9,12.5|Roma');
+  await hangs.advance(C.timeout - 1);
+  const beforeWatchdog = hangs.requests.length;
+  await hangs.advance(C.report + C.background);
+  r.check('request that never completes: the watchdog aborts it and the shim retries',
+    beforeWatchdog === 1 && hangs.requests.length > 1 && hangsCalls().length >= 1 && hangsCalls()[0].RetCode === C.unavailable,
+    beforeWatchdog + ' / ' + hangs.requests.length);
+
   const bad = createGadget({ responder: (u) => ({ status: 200, body: '{"error":true,"reason":"x"}' }) });
-  const bres = await bad.search('SearchByCode', '41.9,12.5|Roma');
-  r.check('API error payload -> RetCode 1506', bres.RetCode === 1506);
+  const badCalls = start(bad, '41.9,12.5|Roma');
+  await bad.advance(0);
+  r.check('API error payload -> failure reported at once, no automatic retries',
+    badCalls().length === 1 && badCalls()[0].RetCode === C.unavailable && forecastRequests(bad) === 1);
   const http500 = createGadget({ responder: () => ({ status: 500, body: '' }) });
-  const hres = await http500.search('SearchByCode', '41.9,12.5|Roma');
-  r.check('HTTP 500 -> RetCode 1506 after trying all XMLHTTP ProgIDs', hres.RetCode === 1506 && http500.requests.length >= 2, http500.requests.length);
+  const hCalls = start(http500, '41.9,12.5|Roma');
+  await http500.advance(C.report + C.background);
+  r.check('HTTP 500 -> every XMLHTTP ProgID tried, retried, then reported',
+    hCalls().length >= 1 && hCalls()[0].RetCode === C.unavailable && http500.requests.length >= 10, http500.requests.length);
+
+  const newer = createGadget({ responder: (u) => (newer.now() < 10000 ? null : fixtureResponder(u)) });
+  newer.useVirtualClock();
+  newer.run('var __calls = []; var __shim = new WLServicesShim().GetService("weather");' +
+    ' __shim.OnDataReady = function (d) { __calls.push(d); }; __shim.SearchByCode("41.9,12.5|Roma");');
+  await newer.advance(1000);
+  newer.run('__shim.SearchByCode("45.46,9.19|Milano");');
+  await newer.advance(30000);
+  const newerCalls = newer.run('__calls');
+  r.check('a newer request replaces the pending one (only the latest location is delivered)',
+    newerCalls.length === 1 && newerCalls[0].item(0).Location === 'Milano', JSON.stringify(newerCalls.map((d) => d.item(0) && d.item(0).Location)));
+
+  r.check('apostrophes in location names become typographic (weather.js polling string stays valid)',
+    g.run('WLServicesShim._safeLabel("L\'Aquila, Abruzzo")') === 'L\u2019Aquila, Abruzzo');
 
   // --- SearchByLocation ----------------------------------------------------
   const geo = createGadget({ locale: 'it-IT' });
@@ -125,7 +203,12 @@ const { createGadget, createRunner, fixture } = require('./helpers.cjs');
   r.check('reverse geocoding returns the city', rres.item(0).Location === 'Paris' && rres.item(0).LocationCode === '48.8566,2.3522');
   const revDown = createGadget({ responder: () => null });
   const rdres = await revDown.search('SearchByLocation', '48.8566, 2.3522');
-  r.check('reverse geocoding failure -> RetCode 1506', rdres.RetCode === 1506 && rdres.Count === 0);
+  r.check('reverse geocoding failure -> service unavailable (not 1506)', rdres.RetCode === C.unavailable && rdres.Count === 0);
+  const quote = createGadget({ responder: () => ({ status: 200, body: JSON.stringify({ results: [{ name: "L'Aquila", admin1: 'Abruzzo', country: 'Italia', latitude: 42.35, longitude: 13.4 }] }) }) });
+  const qres = await quote.search('SearchByLocation', 'Aquila');
+  r.check('search result with an apostrophe: saved code has no plain apostrophe',
+    (qres.item(0).LocationCode + '|' + qres.item(0).ZipCode).indexOf("'") < 0 && qres.item(0).Location === 'L\u2019Aquila, Abruzzo, Italia',
+    qres.item(0).Location);
 
   r.done();
 })().catch((e) => { console.error(e); process.exit(1); });

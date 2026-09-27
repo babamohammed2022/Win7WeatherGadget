@@ -23,6 +23,10 @@ Usage
     python scripts/build.py --require-installer # fail if ISCC is not found (CI)
     python scripts/build.py --payload-zip FILE  # use a local copy of the pinned baseline
 
+The baseline is downloaded from the public release URL. When the repository
+is private, set GH_TOKEN or GITHUB_TOKEN (read access to the repository is
+enough): the asset is then fetched through the authenticated GitHub API.
+
 ISCC is looked up in this order: --iscc, the ISCC environment variable, PATH,
 then the default Inno Setup 6 folders. On Linux, a Wine command can be given,
 for example:  ISCC="wine C:\\IS6\\ISCC.exe" python scripts/build.py
@@ -48,7 +52,12 @@ DIST = os.path.join(ROOT, "dist")
 SRC = os.path.join(DIST, "source", "Weather.gadget")
 PAYLOAD_CACHE = os.path.join(ROOT, "dist", "cache", "Win7WeatherGadget-Portable-v1.0.0.zip")
 PAYLOAD_URL = "https://github.com/babamohammed2022/Win7WeatherGadget/releases/download/v1.0.0/Win7WeatherGadget-Portable.zip"
-PAYLOAD_SHA256 = "672b04fe31aab9a34157022a9665b25ffed836bdff769ab00b052828be844d9f"
+# SHA-256 of the v1.0.0 portable asset as published (also reported by the
+# GitHub API as the asset "digest").
+PAYLOAD_SHA256 = "2fe82e2271cc051b5a170e31fc06a48fa901483a5e6f4409d146770dedb0b40d"
+PAYLOAD_REPO = "babamohammed2022/Win7WeatherGadget"
+PAYLOAD_TAG = "v1.0.0"
+PAYLOAD_ASSET = "Win7WeatherGadget-Portable.zip"
 PAYLOAD_PREFIX = "Win7WeatherGadget-Portable/Gadget/Weather.gadget/"
 STAGE = os.path.join(DIST, "stage")
 STAGE_GADGET = os.path.join(STAGE, "gadget", "Weather.gadget")
@@ -131,6 +140,74 @@ def read_version():
 # 1. source assembly and validation
 # ---------------------------------------------------------------------------
 
+def _github_token():
+    for name in ("GH_TOKEN", "GITHUB_TOKEN"):
+        value = os.environ.get(name, "").strip()
+        if value:
+            return value
+    return None
+
+
+def _http_get(url, headers, target=None):
+    """GET url and return the body (or write it to target).
+
+    Redirects are followed by hand so that the Authorization header is never
+    forwarded to another host (release assets redirect to a signed storage URL
+    that rejects extra credentials).
+    """
+    from urllib.parse import urlsplit
+    from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+    class NoRedirect(HTTPRedirectHandler):
+        def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+            return None
+
+    opener = build_opener(NoRedirect)
+    from urllib.error import HTTPError
+    host = urlsplit(url).netloc
+    for _ in range(5):
+        request = Request(url, headers=headers)
+        try:
+            response = opener.open(request, timeout=60)
+        except HTTPError as exc:
+            if exc.code in (301, 302, 303, 307, 308) and exc.headers.get("Location"):
+                from urllib.parse import urljoin
+                url = urljoin(url, exc.headers["Location"])
+                if urlsplit(url).netloc != host:
+                    headers = {k: v for k, v in headers.items() if k.lower() != "authorization"}
+                    host = urlsplit(url).netloc
+                continue
+            raise
+        with response:
+            if target is None:
+                return response.read()
+            with open(target, "wb") as fh:
+                shutil.copyfileobj(response, fh)
+            return None
+    raise BuildError("too many redirects while downloading " + url)
+
+
+def download_payload(target):
+    """Download the pinned portable ZIP, authenticated when a token is set."""
+    agent = {"User-Agent": "Win7WeatherGadget-build/1.0"}
+    token = _github_token()
+    if not token:
+        _http_get(PAYLOAD_URL, agent, target)
+        return
+    api = {"Authorization": "Bearer " + token, "Accept": "application/vnd.github+json",
+           "X-GitHub-Api-Version": "2022-11-28"}
+    api.update(agent)
+    release = json.loads(_http_get("https://api.github.com/repos/%s/releases/tags/%s" % (PAYLOAD_REPO, PAYLOAD_TAG),
+                                   api).decode("utf-8"))
+    for asset in release.get("assets", []):
+        if asset.get("name") == PAYLOAD_ASSET:
+            headers = dict(api)
+            headers["Accept"] = "application/octet-stream"
+            _http_get(asset["url"], headers, target)
+            return
+    raise BuildError("release %s has no asset %s" % (PAYLOAD_TAG, PAYLOAD_ASSET))
+
+
 def obtain_payload(explicit=None):
     """Return the pinned release ZIP used as the binary-only vendor baseline."""
     supplied = explicit or os.environ.get("W7WEATHER_PAYLOAD_ZIP")
@@ -146,10 +223,7 @@ def obtain_payload(explicit=None):
             valid_cache = hashlib.sha256(_read(path, "rb")).hexdigest() == PAYLOAD_SHA256
         if not valid_cache:
             try:
-                from urllib.request import Request, urlopen
-                request = Request(PAYLOAD_URL, headers={"User-Agent": "Win7WeatherGadget-build/1.0"})
-                with urlopen(request, timeout=60) as response, open(path + ".tmp", "wb") as target:
-                    shutil.copyfileobj(response, target)
+                download_payload(path + ".tmp")
                 os.replace(path + ".tmp", path)
             except Exception as exc:
                 try:
@@ -356,7 +430,6 @@ def stage_extras():
         write_text(os.path.join(STAGE, "portable", name), text)
     write_text(os.path.join(docs, "LICENSE.txt"), read_text("LICENSE"))
     write_text(os.path.join(docs, "NOTICE.md"), read_text("NOTICE.md"))
-    write_text(os.path.join(docs, "CHANGELOG.md"), read_text("CHANGELOG.md"))
     write_text(os.path.join(docs, "README.md"), read_text("README.md"))
     # PowerShell 5.1 reads BOM-less scripts with the ANSI code page: keep the BOM.
     for name in ("CleanGadgetSettings.ps1", "Diagnostics.ps1"):

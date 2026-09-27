@@ -33,7 +33,7 @@ Windows 10 and Windows 11 require a separate Windows Sidebar-compatible gadget r
 
 Requirements: Python 3.8+, Node.js 18+ for tests, Inno Setup 6 to compile the installer, and internet access to fetch the pinned v1.0.0 portable package used as the binary gadget baseline.
 
-The repository keeps the project's own overlays, scripts, tests, and documentation rather than a duplicate copy of Microsoft's full gadget payload. The Windows installer and portable release assets still contain the complete gadget. Builds fetch the public v1.0.0 portable asset and verify its SHA-256 before applying the project's overlays; the MediaFire archive is only a source reference and is not a build dependency.
+The repository keeps the project's own overlays, scripts, tests, and documentation rather than a duplicate copy of Microsoft's full gadget payload. The Windows installer and portable release assets still contain the complete gadget. Builds fetch the v1.0.0 portable asset (authenticated with `GH_TOKEN` or `GITHUB_TOKEN` while the repository is private) and verify its SHA-256 before applying the project's overlays; the MediaFire archive is only a source reference and is not a build dependency.
 
 ```bat
 npm ci

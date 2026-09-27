@@ -42,8 +42,69 @@ function WLServicesShim() {
 	this.Celsius = false;
 	this.OnDataReady = null;
 	this.RefreshInterval = 60;   // minutes (the original gadget uses 60)
-	this._requestPending = false;
+	this._forecastGeneration = 0;   // identifies the latest SearchByCode request
+	this._retryTimer = null;        // pending automatic retry of SearchByCode
+	this._unavailable = false;      // true after a failure was reported to the gadget
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// NETWORK RESILIENCE
+//
+// When Windows starts, the Sidebar loads the gadget before the network is
+// ready. The original shim then either waited forever (a failed request never
+// reached OnDataReady, so "Getting data..." stayed on screen) or answered with
+// RetCode 1506, which makes weather.js give up for good ("not available in
+// your area", no further polling). The only way out was to change location.
+//
+// Now:
+//   * every request has a watchdog, and every failure (DNS/connection errors,
+//     exceptions while reading the response, time-outs) reaches OnDataReady;
+//   * SearchByCode retries transient failures by itself (RETRY_DELAYS_MS)
+//     while the gadget keeps showing "Getting data...";
+//   * if the service is still unreachable after REPORT_FAILURE_AFTER_MS, the
+//     gadget receives RETCODE_UNAVAILABLE. Unlike 1506, this makes weather.js
+//     show "Service not available" and start Microsoft's own polling, which
+//     restores the weather as soon as the connection is back. The shim also
+//     keeps retrying in the background (at most every BACKGROUND_RETRY_MS)
+//     until a newer request replaces it.
+////////////////////////////////////////////////////////////////////////////////
+WLServicesShim.REQUEST_TIMEOUT_MS = 30000;            // watchdog for one request (all fallbacks)
+WLServicesShim.RETRY_DELAYS_MS = [3000, 5000, 10000, 15000, 30000, 30000, 60000];
+WLServicesShim.REPORT_FAILURE_AFTER_MS = 90000;       // show the error after about 1.5 minutes
+WLServicesShim.BACKGROUND_RETRY_MS = 120000;          // retry interval after the error is shown
+WLServicesShim.RETCODE_UNAVAILABLE = 503;             // any code except 200/1506/1507: the gadget polls
+
+WLServicesShim._now = function () {
+	return (new Date()).getTime();
+};
+
+// Delay before retry number "attempt" (0-based).
+WLServicesShim._retryDelay = function (attempt) {
+	var delays = WLServicesShim.RETRY_DELAYS_MS;
+	if (!delays || delays.length === 0) { return WLServicesShim.BACKGROUND_RETRY_MS; }
+	return delays[attempt < delays.length ? attempt : delays.length - 1];
+};
+
+// Result object passed to OnDataReady when no data can be returned.
+WLServicesShim._failureResult = function (retCode) {
+	return comAliases({ RetCode: retCode || WLServicesShim.RETCODE_UNAVAILABLE, Count: 0, Timestamp: new Date(),
+		item: function () { return undefined; } });
+};
+
+// Location names become part of the saved location code. weather.js puts that
+// code inside a quoted string evaluated by setInterval() while it polls for the
+// service ("...SearchByCode('<code>')"), so a plain apostrophe (L'Aquila) would
+// break the polling. Use the typographic apostrophe instead.
+WLServicesShim._safeLabel = function (text) {
+	return String(text).replace(/'/g, "\u2019").replace(/[\\\r\n]/g, " ");
+};
+
+WLServicesShim.prototype._cancelRetry = function () {
+	if (this._retryTimer !== null) {
+		try { clearTimeout(this._retryTimer); } catch (e) { /* ignored */ }
+		this._retryTimer = null;
+	}
+};
 
 WLServicesShim.prototype.GetService = function (name) {
 	// The original code does: new ActiveXObject("wlsrvc.WLServices").GetService("weather")
@@ -195,10 +256,12 @@ WLServicesShim._dayName = function (index) {
 // Msxml2.XMLHTTP, is not bound to the document security zone), with a chain of
 // fallbacks and, as a last resort, the native XMLHttpRequest.
 ////////////////////////////////////////////////////////////////////////////////
-WLServicesShim._xhrGet = function (url, onOk, onErr) {
+WLServicesShim._xhrGet = function (url, onOk, onErr, timeoutMs) {
 	var progIds = ["Msxml2.ServerXMLHTTP.6.0", "Msxml2.ServerXMLHTTP", "Msxml2.XMLHTTP.6.0", "Msxml2.XMLHTTP", "Microsoft.XMLHTTP"];
 	var lastErr = null;
 	var finished = false;
+	var current = null;      // request in flight
+	var watchdog = null;
 
 	function parseJson(text) {
 		try { return JSON.parse(text); }
@@ -208,54 +271,133 @@ WLServicesShim._xhrGet = function (url, onOk, onErr) {
 		}
 	}
 
-	function tryProgId(index) {
+	function detach(req) {
+		if (!req) { return; }
+		// MSXML does not accept null here: use an empty function.
+		try { req.onreadystatechange = function () {}; } catch (e) { /* ignored */ }
+	}
+
+	// Delivers exactly one result, whatever happens.
+	function finish(ok, value) {
+		if (finished) { return; }
+		finished = true;
+		if (watchdog !== null) {
+			try { clearTimeout(watchdog); } catch (e) { /* ignored */ }
+			watchdog = null;
+		}
+		detach(current);
+		current = null;
+		if (ok) { onOk(value); } else { onErr(value); }
+	}
+
+	// Reads status and body of a completed request. Reading .status of a failed
+	// MSXML request (for example "server name could not be resolved" while the
+	// network is not ready yet) throws: that is a failure, not a crash.
+	function complete(req, index) {
+		var status, text, json;
+		try {
+			status = req.status;
+			text = req.responseText;
+		} catch (readErr) {
+			lastErr = readErr;
+			next(index + 1);
+			return;
+		}
+		if (status !== 200) {
+			lastErr = new Error("HTTP " + status);
+			lastErr.httpStatus = status;
+			next(index + 1);
+			return;
+		}
+		try { json = parseJson(text); }
+		catch (parseErr) { finish(false, parseErr); return; }
+		finish(true, json);
+	}
+
+	function next(index) {
+		if (finished) { return; }
+		detach(current);
+		current = null;
+		var req;
 		if (index >= progIds.length) {
 			// Last attempt: native XMLHttpRequest
 			try {
-				var xhr = new XMLHttpRequest();
-				xhr.open("GET", url, true);
-				xhr.onreadystatechange = function () {
-					if (finished || xhr.readyState !== 4) { return; }
-					finished = true;
-					if (xhr.status === 200) {
-						try { onOk(parseJson(xhr.responseText)); }
-						catch (parseErr) { onErr(parseErr); }
-					} else {
-						onErr(new Error("HTTP " + xhr.status));
+				req = new XMLHttpRequest();
+				current = req;
+				req.open("GET", url, true);
+				req.onreadystatechange = function () {
+					if (finished || current !== req || req.readyState !== 4) { return; }
+					var status, text, json;
+					try { status = req.status; text = req.responseText; }
+					catch (readErr) { finish(false, lastErr || readErr); return; }
+					if (status !== 200) {
+						var httpErr = new Error("HTTP " + status);
+						httpErr.httpStatus = status;
+						finish(false, (status === 0 && lastErr) ? lastErr : httpErr);
+						return;
 					}
+					try { json = parseJson(text); }
+					catch (parseErr) { finish(false, parseErr); return; }
+					finish(true, json);
 				};
-				xhr.send(null);
+				req.send(null);
 			} catch (err) {
-				onErr(lastErr || err);
+				finish(false, lastErr || err);
 			}
 			return;
 		}
 
 		try {
-			var req = new ActiveXObject(progIds[index]);
+			req = new ActiveXObject(progIds[index]);
+			current = req;
 			req.open("GET", url, true);
 			req.setRequestHeader("User-Agent", "Windows-Gadget-Meteo");
+			// Never answer from the WinINet cache (Msxml2.XMLHTTP fallbacks).
+			try {
+				req.setRequestHeader("Cache-Control", "no-cache");
+				req.setRequestHeader("If-Modified-Since", "Sat, 01 Jan 2000 00:00:00 GMT");
+			} catch (hErr) { /* ignored */ }
 			try { req.setTimeouts(10000, 10000, 20000, 20000); } catch (tErr) { /* not supported: ignored */ }
 			req.onreadystatechange = function () {
-				if (finished || req.readyState !== 4) { return; }
-				finished = true;
-				if (req.status === 200) {
-					try { onOk(parseJson(req.responseText)); }
-					catch (parseErr) { onErr(parseErr); }
-				} else {
-					lastErr = new Error("HTTP " + req.status);
-					finished = false;                  // allow the fallback
-					tryProgId(index + 1);
-				}
+				if (finished || current !== req) { return; }
+				var state;
+				try { state = req.readyState; } catch (stateErr) { state = 4; }
+				if (state !== 4) { return; }
+				complete(req, index);
 			};
 			req.send();
 		} catch (err) {
 			lastErr = err;
-			tryProgId(index + 1);
+			next(index + 1);
 		}
 	}
 
-	tryProgId(0);
+	try {
+		watchdog = setTimeout(function () {
+			if (finished) { return; }
+			var req = current;
+			detach(req);
+			current = null;
+			try { if (req) { req.abort(); } } catch (abortErr) { /* ignored */ }
+			var timeoutErr = new Error("request timed out");
+			timeoutErr.timeout = true;
+			finish(false, timeoutErr);
+		}, timeoutMs || WLServicesShim.REQUEST_TIMEOUT_MS);
+	} catch (timerErr) { watchdog = null; }
+
+	next(0);
+};
+
+// True when a failed request is worth retrying: no connection, time-out,
+// server errors, rate limiting and unreadable answers (for example the login
+// page of a captive portal while the connection is being set up). Other HTTP
+// errors and error answers of the API are not going to change by themselves.
+WLServicesShim._isTransientError = function (err) {
+	if (!err) { return true; }
+	if (err.apiError) { return false; }
+	var status = err.httpStatus;
+	if (status === undefined || status === null || status === 0) { return true; }
+	return status >= 500 || status === 408 || status === 429 || status >= 12000;   // 12xxx: WinINet network errors
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -303,7 +445,7 @@ WLServicesShim._buildForecastResultObject = function (json, locationLabel, lat, 
 	var currentTemp = current ? current.temperature_2m : undefined;
 
 	if (!daily || !daily.time || daily.time.length === 0) {
-		return comAliases({ RetCode: 1506, Count: 0, Timestamp: new Date(), item: function () { return undefined; } });
+		return WLServicesShim._failureResult();
 	}
 
 	var forecasts = [];
@@ -402,19 +544,81 @@ WLServicesShim.prototype.SearchByCode = function (code) {
 		"&daily=weathercode,temperature_2m_max,temperature_2m_min" +
 		"&temperature_unit=fahrenheit&timezone=auto&forecast_days=5";
 
-	self._requestPending = false;
-	WLServicesShim._xhrGet(url,
-		function (json) {
-			var result = WLServicesShim._buildForecastResultObject(json, label, lat, lon);
-			if (typeof self.OnDataReady === "function") { self.OnDataReady(result); }
-		},
-		function (err) {
-			System.Debug.outputString("Weather gadget: failed to retrieve weather data (" + (err && err.message ? err.message : err) + ")");
-			if (typeof self.OnDataReady === "function") {
-				self.OnDataReady(comAliases({ RetCode: 1506, Count: 0, Timestamp: new Date(), item: function () { return undefined; } }));
-			}
+	// A new request replaces any request or retry still pending on this object.
+	self._cancelRetry();
+	var generation = ++self._forecastGeneration;
+	var startedAt = WLServicesShim._now();
+	var attempt = 0;
+	var failureReported = false;
+
+	function current() { return generation === self._forecastGeneration; }
+
+	function deliver(result) {
+		if (typeof self.OnDataReady === "function") { self.OnDataReady(result); }
+	}
+
+	function scheduleRetry(delay) {
+		self._cancelRetry();
+		try {
+			self._retryTimer = setTimeout(function () {
+				self._retryTimer = null;
+				if (current()) { request(); }
+			}, delay);
+		} catch (timerErr) {
+			self._retryTimer = null;
 		}
-	);
+	}
+
+	function onFailure(err) {
+		if (!current()) { return; }
+		System.Debug.outputString("Weather gadget: failed to retrieve weather data (" + (err && err.message ? err.message : err) + ")");
+		if (!WLServicesShim._isTransientError(err)) {
+			// Retrying will not help; weather.js polls the service by itself.
+			failureReported = true;
+			self._unavailable = true;
+			deliver(WLServicesShim._failureResult());
+			return;
+		}
+		// Quick retries only while the service is not known to be down: once the
+		// gadget shows the error, its own polling requests are answered at once.
+		var elapsed = WLServicesShim._now() - startedAt;
+		if (!failureReported && (self._unavailable || elapsed >= WLServicesShim.REPORT_FAILURE_AFTER_MS)) {
+			failureReported = true;
+			self._unavailable = true;
+			deliver(WLServicesShim._failureResult());
+			if (!current()) { return; }   // the gadget already started a new request
+		}
+		var delay = failureReported ? WLServicesShim.BACKGROUND_RETRY_MS : WLServicesShim._retryDelay(attempt);
+		attempt++;
+		scheduleRetry(delay);
+	}
+
+	function request() {
+		WLServicesShim._xhrGet(url,
+			function (json) {
+				if (!current()) { return; }
+				if (!json || json.error) {
+					var apiErr = new Error("API error" + (json && json.reason ? ": " + json.reason : ""));
+					apiErr.apiError = true;
+					onFailure(apiErr);
+					return;
+				}
+				var result = WLServicesShim._buildForecastResultObject(json, label, lat, lon);
+				if (result.RetCode !== 200) {
+					var dataErr = new Error("no forecast data in the answer");
+					dataErr.apiError = true;
+					onFailure(dataErr);
+					return;
+				}
+				self._cancelRetry();
+				self._unavailable = false;
+				deliver(result);
+			},
+			onFailure
+		);
+	}
+
+	request();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -436,6 +640,7 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 	// LocationCode and the label into ZipCode, so SearchByCode receives
 	// "lat,lon|label" exactly as it expects.
 	function makeItem(name, lat, lon) {
+		name = WLServicesShim._safeLabel(name);
 		return {
 			Location: name,
 			LocationCode: lat.toFixed(4) + "," + lon.toFixed(4),
@@ -470,7 +675,7 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 				var name = json.city || json.locality || json.principalSubdivision || WLServicesShim._text("CurrentLocation", "Current location");
 				respond([makeItem(name, lat, lon)]);
 			},
-			function (err) { respondEmpty(1506); }
+			function (err) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
 		);
 	} else {
 		// Geocoding by city name
@@ -490,7 +695,7 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 				}
 				respond(items);
 			},
-			function (err) { respondEmpty(1506); }
+			function (err) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
 		);
 	}
 };

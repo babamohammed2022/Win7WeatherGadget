@@ -210,7 +210,6 @@ Source: "{#StageDir}\docs\README.txt";    DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\docs\README.it.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\docs\LICENSE.txt";   DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\docs\NOTICE.md";     DestDir: "{app}"; Flags: ignoreversion
-Source: "{#StageDir}\docs\CHANGELOG.md";  DestDir: "{app}"; Flags: ignoreversion
 Source: "{#StageDir}\tools\CleanGadgetSettings.ps1"; DestDir: "{app}\tools"; Flags: ignoreversion
 
 [Run]

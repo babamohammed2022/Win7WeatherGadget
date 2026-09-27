@@ -36,6 +36,8 @@ python scripts\build.py --payload-zip C:\path\Win7WeatherGadget-Portable.zip
 
 The file must match the pinned hash. `W7WEATHER_PAYLOAD_ZIP` can be used instead of `--payload-zip`. The build never downloads from MediaFire.
 
+While the repository is private, the public download URL answers 404. Set `GH_TOKEN` or `GITHUB_TOKEN` (read access to the repository is enough) and the build fetches the same asset through the authenticated GitHub API; CI passes the workflow token. The pinned SHA-256 is the digest GitHub reports for the published v1.0.0 asset. Never re-upload assets to the v1.0.0 release: the build baseline would change and every build would fail the checksum.
+
 The generated archives are reproducible: files are sorted, timestamps are fixed (1 January 2010, or `SOURCE_DATE_EPOCH`), and permissions are normalized. The EXE contains build timestamps and differs between builds.
 
 ### Options
@@ -102,13 +104,14 @@ node tests\js\run_all.cjs --gadget dist\stage\gadget\Weather.gadget
 
 ## Versioning
 
-`VERSION` is the single source of truth. When preparing a future release, update `VERSION`, `package.json`, `CHANGELOG.md`, and the README version, then tag `vX.Y.Z`. The baseline portable release is deliberately pinned in `scripts/build.py`; do not silently retarget that baseline. If the baseline is intentionally advanced, update its URL and SHA-256 together and validate the full Windows build before publishing.
+`VERSION` is the single source of truth. When preparing a future release, update `VERSION`, `package.json` and `package-lock.json`, then push an annotated tag `vX.Y.Z` whose message becomes the release notes. For a test build, tag `vX.Y.Z-<label>` (for example `v1.0.1-beta.1`) with the same `VERSION`: it is published as a pre-release and does not replace the latest release. The baseline portable release is deliberately pinned in `scripts/build.py`; do not silently retarget that baseline. If the baseline is intentionally advanced, update its URL and SHA-256 together and validate the full Windows build before publishing.
 
 ## Continuous integration
 
 `.github/workflows/build.yml` runs on `windows-latest`:
 
 - on every push and pull request: downloads and verifies the pinned baseline, validates and tests the assembled gadget, builds the installer and portable ZIP, then uploads build artifacts;
-- on a tag `v*.*.*`: performs the same checks and publishes a GitHub release containing exactly `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip`.
+- on a tag `vX.Y.Z`: performs the same checks and publishes a GitHub release containing exactly `Win7WeatherGadget-Setup.exe` and `Win7WeatherGadget-Portable.zip`; the annotated tag message is used as the release notes;
+- on a tag `vX.Y.Z-<label>`: the same, published as a pre-release (test build).
 
 Inno Setup 6.7.3 is downloaded from its official GitHub release and its SHA-256 is verified before installation.

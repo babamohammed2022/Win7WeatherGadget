@@ -6,6 +6,8 @@
 # Tag vX.Y.Z (matching the VERSION file): the same, plus a GitHub release with
 # exactly two assets: Win7WeatherGadget-Setup.exe and
 # Win7WeatherGadget-Portable.zip.
+# Tag vX.Y.Z-<label> (for example v1.0.1-beta.1): the same, published as a
+# pre-release (a test build that does not become the "latest" release).
 
 name: Build
 
@@ -31,6 +33,7 @@ jobs:
     runs-on: windows-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.tag.outputs.prerelease }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,12 +59,20 @@ jobs:
           Write-Host "Version $v"
 
       - name: Check tag matches VERSION
+        id: tag
         if: startsWith(github.ref, 'refs/tags/v')
         shell: pwsh
         run: |
           $tag = '${{ github.ref_name }}'
           $v = '${{ steps.version.outputs.version }}'
-          if ($tag -ne "v$v") { throw "Tag $tag does not match VERSION $v" }
+          if ($tag -eq "v$v") {
+            "prerelease=false" >> $env:GITHUB_OUTPUT
+          } elseif ($tag -match ('^v' + [regex]::Escape($v) + '-[0-9A-Za-z][0-9A-Za-z.-]*$')) {
+            "prerelease=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Test build $tag (pre-release)"
+          } else {
+            throw "Tag $tag does not match VERSION $v (expected v$v or v$v-<label>)"
+          }
 
       - name: Install test dependencies
         run: npm ci
@@ -111,6 +122,8 @@ jobs:
       - name: Build installer, gadget and ZIP
         env:
           APP_URL: ${{ github.server_url }}/${{ github.repository }}
+          # Read access to this repository's releases (needed while it is private).
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/build.py --require-installer
 
       - name: Validate structure and the 20 gadget languages
@@ -120,6 +133,8 @@ jobs:
         run: npm test -- --gadget dist/source/Weather.gadget
 
       - name: Python tests (repository, localization, packages, installer)
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: python scripts/run_tests.py
 
       - name: JavaScript tests against the packaged gadget
@@ -156,26 +171,41 @@ jobs:
         working-directory: dist
         run: sha256sum -c SHA256SUMS.txt
 
-      - name: Release notes from CHANGELOG.md
+      - name: Release notes from the tag message
+        env:
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
-          python3 - <<'EOF'
-          import re
-          text = open("CHANGELOG.md", encoding="utf-8").read()
-          version = "${{ needs.build.outputs.version }}"
-          m = re.search(r"^## \[?" + re.escape(version) + r"\]?.*?$(.*?)(?=^## |\Z)", text, re.M | re.S)
-          body = m.group(1).strip() if m else "Release " + version
-          open("release-notes.md", "w", encoding="utf-8").write(body + "\n")
-          EOF
+          # An annotated tag's message becomes the release notes.
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          if [ "$(git cat-file -t "refs/tags/$TAG")" = "tag" ]; then
+            git tag -l --format='%(contents)' "$TAG" | sed '/-----BEGIN PGP SIGNATURE-----/,$d' > release-notes.md
+          fi
+          if [ ! -s release-notes.md ] || ! grep -q '[^[:space:]]' release-notes.md; then
+            echo "Release $VERSION" > release-notes.md
+          fi
+          cat release-notes.md
 
       - name: Create or update GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag='${{ github.ref_name }}'
-          title='Windows 7 Weather Gadget ${{ needs.build.outputs.version }}'
+          title="Windows 7 Weather Gadget ${tag#v}"
+          if [ '${{ needs.build.outputs.prerelease }}' = 'true' ]; then
+            kind=(--prerelease)
+            title="$title (test build)"
+          else
+            kind=(--prerelease=false --latest)
+          fi
+          # v1.0.0 is the pinned build baseline (scripts/build.py): never replace its assets.
+          if [ "$tag" = "v1.0.0" ]; then
+            echo "::error::v1.0.0 is the pinned build baseline; publish a new version instead."
+            exit 1
+          fi
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" dist/Win7WeatherGadget-Setup.exe dist/Win7WeatherGadget-Portable.zip --clobber
-            gh release edit "$tag" --title "$title" --notes-file release-notes.md
+            gh release edit "$tag" --title "$title" --notes-file release-notes.md "${kind[@]}"
           else
-            gh release create "$tag" dist/Win7WeatherGadget-Setup.exe dist/Win7WeatherGadget-Portable.zip --title "$title" --notes-file release-notes.md --verify-tag
+            gh release create "$tag" dist/Win7WeatherGadget-Setup.exe dist/Win7WeatherGadget-Portable.zip --title "$title" --notes-file release-notes.md --verify-tag "${kind[@]}"
           fi

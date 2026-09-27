@@ -13,13 +13,18 @@
 // SearchByLocation -> doDisplayPlacePossibilities() builds the result list
 // with Microsoft's own "for (i = 0; i < data.count; i++)" loop.
 //
+// Restart flow (Italian): the gadget starts while the network is not ready yet,
+// as after a Windows restart. It must show the weather as soon as the network
+// is available, without being stuck on "Getting data..." and without the user
+// having to change the location. Timers run on the virtual clock of helpers.cjs.
+//
 // Offline by default (tests/fixtures). With --online the English and Italian
 // flows use real HTTPS requests to Open-Meteo.
 ////////////////////////////////////////////////////////////////////////////////
 
 const fs = require('fs');
 const path = require('path');
-const { createGadget, createRunner, onlineResponder, LOCALES, fixture } = require('./helpers.cjs');
+const { createGadget, createRunner, onlineResponder, fixtureResponder, LOCALES, fixture, NETWORK_THROWS } = require('./helpers.cjs');
 
 const ONLINE = process.argv.indexOf('--online') >= 0;
 const WEATHER_SCRIPTS = ['js/library.js', 'js/wlservices_shim.js', 'js/weather.js'];
@@ -116,6 +121,70 @@ async function settingsFlow(r, locale, query) {
   }
 }
 
+// Weather gadget with a saved location whose network comes up at "upAt" ms
+// (virtual clock). "failure" is the answer while the network is down.
+function restartedGadget(label, upAt, failure) {
+  const g = createGadget({
+    locale: 'it-IT', scripts: WEATHER_SCRIPTS, html: 'weather.html',
+    settings: { WeatherLocation: label, WeatherLocationCode: '42.3498,13.3995|' + label + '|', DisplayDegreesIn: 'Celsius' },
+    responder: (u) => (g.now() < upAt ? failure : fixtureResponder(u))
+  });
+  g.useVirtualClock();
+  return g;
+}
+
+function screen(g) {
+  return g.run(`({ message: String(document.getElementById('message').innerHTML || ''),
+    messageVisible: document.getElementById('WeatherMessage').style.visibility === 'visible',
+    place: String(document.getElementById('PlaceHrefDockedMode').innerText || ''),
+    temp: String(document.getElementById('TemperatureCurrent').innerText || ''),
+    valid: MicrosoftGadget.isValid, status: MicrosoftGadget.status,
+    polling: !!MicrosoftGadget.pollingForServiceExistenceIsRunning })`);
+}
+
+function showsWeather(s, place) {
+  return s.valid === true && s.status === 200 && s.place === place && /-?\d+°/.test(s.temp) && !s.messageVisible;
+}
+
+async function restartFlow(r) {
+  const T = createGadget({ locale: 'it-IT' }).sandbox.L_localizedStrings_Text;
+  const C = createGadget().run('({ report: WLServicesShim.REPORT_FAILURE_AFTER_MS, background: WLServicesShim.BACKGROUND_RETRY_MS })');
+
+  // 1. Network ready 20 s after the gadget starts.
+  const a = restartedGadget('Roma', 20000, NETWORK_THROWS);
+  a.run('setup()');
+  const loading = screen(a);
+  r.check('restart: "' + T['GettingData'] + '" shown while the network is not ready',
+    loading.messageVisible && loading.message === T['GettingData'], JSON.stringify(loading));
+  await a.advance(45000);   // retries at 3, 8, 18, 33 s
+  const sa = screen(a);
+  r.check('restart: weather shown when the network comes up (saved location kept)', showsWeather(sa, 'Roma'), JSON.stringify(sa));
+
+  // 2. Network down for 5 minutes: error instead of an endless "Getting data...",
+  //    then Microsoft's service polling restores the weather.
+  const b = restartedGadget('Roma', 300000, null);
+  b.run('setup()');
+  await b.advance(C.report + 5000);
+  const sb = screen(b);
+  r.check('long outage: "' + T['ServiceNotAvailable'] + '" shown and the gadget polls the service',
+    sb.messageVisible && sb.message.indexOf(T['ServiceNotAvailable']) >= 0 && sb.polling && sb.status !== 1506, JSON.stringify(sb));
+  await b.advance(300000 + 90000 - b.now());
+  const sb2 = screen(b);
+  r.check('long outage: weather restored automatically when the network is back, polling stopped',
+    showsWeather(sb2, 'Roma') && !sb2.polling && b.scriptErrors.length === 0,
+    JSON.stringify(sb2) + ' ' + b.scriptErrors.map(String).join(';'));
+  r.check('long outage: periodic refresh scheduled again',
+    b.pendingTimers().some((t) => typeof t.fn === 'string' && /requestUpdate/.test(t.fn) && t.ms === b.run('MicrosoftGadget.refreshInterval')));
+
+  // 3. Location saved by an older version with a plain apostrophe: the polling
+  //    string of weather.js cannot run, the shim's own retries still recover.
+  const c = restartedGadget("L'Aquila", 200000, null);
+  c.run('setup()');
+  await c.advance(200000 + C.background + 5000);
+  const sc = screen(c);
+  r.check("apostrophe in a saved location (L'Aquila): weather restored after the outage", showsWeather(sc, "L'Aquila"), JSON.stringify(sc));
+}
+
 (async () => {
   const r = createRunner('Gadget integration (' + (ONLINE ? 'online' : 'offline fixtures') + ')');
   // Without VBScript, weather.js keeps its built-in default unit (Celsius);
@@ -128,5 +197,6 @@ async function settingsFlow(r, locale, query) {
   await weatherFlow(r, 'de-DE', 1031, 'Celsius');
   await settingsFlow(r, 'en-US', 'Milano');
   await settingsFlow(r, 'it-IT', 'Milano');
+  if (!ONLINE) await restartFlow(r);
   r.done();
 })().catch((e) => { console.error(e); process.exit(1); });

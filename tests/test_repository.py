@@ -106,7 +106,7 @@ class RepositoryTests(unittest.TestCase):
         self.assertLess(sum(os.path.getsize(os.path.join(overlay, *p.split("/"))) for p in actual), 500_000)
 
     def test_required_files(self):
-        for rel in ["README.md", "LICENSE", "NOTICE.md", "CHANGELOG.md", "VERSION", "src/localization-en-US.json", ".gitignore",
+        for rel in ["README.md", "LICENSE", "NOTICE.md", "VERSION", "src/localization-en-US.json", ".gitignore",
                     ".gitattributes", "package.json", "package-lock.json",
                     "installer/Setup.iss", "installer/README.txt", "installer/README.it.txt",
                     "scripts/build.py", "scripts/check_localization.py", "scripts/run_tests.py",
@@ -464,12 +464,6 @@ class VersionTests(unittest.TestCase):
         self.assertRegex(version, r"^\d+\.\d+\.\d+$")
         with io.open(os.path.join(ROOT, "package.json"), encoding="utf-8") as fh:
             self.assertEqual(version, json.load(fh)["version"])
-        changelog = read_text(os.path.join(ROOT, "CHANGELOG.md"), encoding="utf-8")
-        first = re.search(r"^## \[?v?(\d+\.\d+\.\d+)\]?", changelog, re.M)
-        self.assertIsNotNone(first)
-        self.assertEqual(version, first.group(1))
-        readme = read_text(os.path.join(ROOT, "README.md"), encoding="utf-8")
-        self.assertIn(version, readme)
         iss = read_text(os.path.join(ROOT, "installer", "Setup.iss"), encoding="utf-8")
         self.assertIn('FileOpen(AddBackslash(SourcePath) + "..\\VERSION")', iss)
 

@@ -105,6 +105,33 @@ case-insensitive aliases, HTTP transport). The differences:
   SkyCode table so that every text comes from the localization files;
 - comments and the debug message are in English.
 
+### Network failures and restarts (since 1.0.1)
+
+After a Windows restart the Sidebar loads the gadget before the network is
+ready. Version 1.0.0 then stayed on "Getting data..." (a failed MSXML request
+throws when its `status` is read, so `OnDataReady` was never called) or showed
+"not available in your area" for good (error code 1506 stops weather.js from
+polling). Changing the location was the only way out. The shim now:
+
+- guards every request with a watchdog (`REQUEST_TIMEOUT_MS`) and turns every
+  failure — connection errors, exceptions while reading the answer, time-outs —
+  into a result, so `OnDataReady` is always called;
+- retries `SearchByCode` by itself (`RETRY_DELAYS_MS`) while the gadget keeps
+  showing "Getting data...", so a network that comes up within about a minute
+  and a half is never noticed;
+- then reports `RETCODE_UNAVAILABLE` (503) instead of 1506: weather.js shows
+  "Service not available" and starts Microsoft's own one-minute polling, which
+  restores the weather when the connection is back. The shim also retries in
+  the background every `BACKGROUND_RETRY_MS` until a newer request replaces it;
+- answers polling requests at once while the service is known to be down,
+  and does not retry errors that cannot fix themselves (invalid answers);
+- sends `Cache-Control: no-cache` so that the WinINet-based fallbacks never
+  answer from the cache;
+- stores location names with a typographic apostrophe (`L’Aquila`): weather.js
+  puts the saved location code inside a quoted `setInterval` string while it
+  polls, and a plain apostrophe would break that string.
+
+
 ## Encoding
 
 The released gadget stores its `.js`, `.html` and `.css` files as UTF-16LE with
