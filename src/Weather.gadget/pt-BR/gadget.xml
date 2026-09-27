@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Veja como está o tempo em qualquer lugar do mundo.</description>
+  <description>Veja como está o tempo em qualquer lugar do mundo. Dados meteorológicos da Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

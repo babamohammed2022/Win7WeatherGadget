@@ -1,7 +1,7 @@
 ﻿Windows 7 Weather Gadget
 ========================
 
-A port of the Windows 7 Weather gadget for Windows 10 and Windows 11.
+The Windows 7 Weather gadget for Windows 7, Windows 10 and Windows 11.
 The original Microsoft gadget is kept as it was; only its data source was
 replaced, because the MSN weather service it used has been shut down.
 
@@ -21,6 +21,18 @@ You need a third-party gadget runtime, for example Gadgets Revived
 (https://gadgetsrevived.com/download-sidebar/) or 8GadgetPack
 (https://8gadgetpack.net). If none is found, the next page explains how to
 install one. Nothing is downloaded unless you click the download button.
+On 64-bit Windows only the 64-bit runtime is started (GadgetPack 38 no
+longer runs its 32-bit version).
+
+WINDOWS 7
+Windows 7 already includes the gadget platform: nothing else is needed and
+nothing is downloaded. If it has been turned off, the next page explains
+how to turn it back on. Windows 7 also includes Microsoft's original
+Weather gadget, which no longer receives data, so the gadget gallery may
+show two Weather gadgets with the same icon. Select one and click "Show
+details": the description of this one ends with "Weather data by
+Open-Meteo." Windows 7 needs TLS 1.2 (on by default with Internet
+Explorer 11).
 
 LANGUAGE
 The gadget follows the Windows display language. It is available in 20

@@ -5,7 +5,14 @@
 ;  Output: Win7WeatherGadget-Setup.exe
 ;
 ;  Wizard: Welcome -> Information -> [Gadget runtime, only if missing]
-;          -> Installing -> Finish
+;          -> [Windows 7 note, only on Windows 7] -> Installing -> Finish
+;
+;  Windows 10/11 (and 8.1) need a separate gadget runtime, which the
+;  "Gadget runtime" page helps to install. Windows 7 (and Vista) include the
+;  gadget platform: nothing is ever downloaded there; if the platform has been
+;  turned off, the same page explains how to turn it back on.
+;  The installer is a 32-bit program: on 64-bit Windows it only ever starts
+;  the 64-bit sidebar.exe (see FindSidebarExe).
 ;
 ;  What it does
 ;  ------------
@@ -66,7 +73,7 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-AppComments=Restores the Windows 7 Weather gadget on Windows 10 and Windows 11
+AppComments=The Windows 7 Weather gadget with a working weather service, for Windows 7, 10 and 11
 
 ; ---- location --------------------------------------------------------------
 ; The gadget itself always goes to the fixed per-user folder expected by the
@@ -244,6 +251,8 @@ var
   DownloadPage: TDownloadWizardPage;
   RuntimeOK: Boolean;
   SidebarWasRunning: Boolean;
+  NativeOS: Boolean;
+  NotePage: TOutputMsgWizardPage;
 
 { ------------------------------------------------------------------------- }
 { Runtime detection                                                         }
@@ -285,29 +294,73 @@ begin
   end;
 end;
 
+{ True on Windows Vista and Windows 7 (6.0 and 6.1), which include the
+  gadget platform. Windows 8 and later no longer do. }
+function IsNativeGadgetOS(): Boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  Result := (Version.Major = 6) and (Version.Minor <= 1);
+end;
+
+{ "Program Files" of the architecture of Windows itself. The installer is a
+  32-bit program, so on 64-bit Windows {commonpf} is "Program Files (x86)",
+  the folder of the 32-bit sidebar.exe. }
+function NativeProgramFiles(): String;
+begin
+  if IsWin64 then
+    Result := ExpandConstant('{commonpf64}')
+  else
+    Result := ExpandConstant('{commonpf32}');
+end;
+
 { Returns the path of the gadget runtime executable (sidebar.exe, or
-  8GadgetPack.exe), or '' when none is found. }
+  8GadgetPack.exe), or '' when none is found.
+  Only the runtime of the architecture of Windows is returned: on 64-bit
+  Windows the 32-bit sidebar.exe in "Program Files (x86)" is never used.
+  GadgetPack 38 refuses to run it ("the 32-bit version is no longer
+  supported") and on Windows 7 it would start a second, separate sidebar. }
 function FindSidebarExe(): String;
 var
-  PF, PF32: String;
+  PF: String;
 begin
   Result := '';
   try
-    PF := ExpandConstant('{commonpf}');
-    PF32 := ExpandConstant('{commonpf32}');
-    { Well-known locations first. }
+    PF := NativeProgramFiles();
     if TryPath(PF + '\Windows Sidebar\sidebar.exe', Result) then Exit;
-    if TryPath(PF32 + '\Windows Sidebar\sidebar.exe', Result) then Exit;
+    { Windows 7: the gadget platform is part of Windows and lives only there. }
+    if IsNativeGadgetOS() then Exit;
     if TryPath(PF + '\Desktop Gadgets\sidebar.exe', Result) then Exit;
-    if TryPath(PF32 + '\Desktop Gadgets\sidebar.exe', Result) then Exit;
     if TryPath(PF + '\Gadgets Revived\sidebar.exe', Result) then Exit;
-    if TryPath(PF + '\8GadgetPack.exe', Result) then Exit;
-    if TryPath(PF32 + '\8GadgetPack.exe', Result) then Exit;
+    if TryPath(PF + '\Windows Sidebar\8GadgetPack.exe', Result) then Exit;
     { Then any folder one level below Program Files. }
     if FindSidebarBelow(PF, Result) then Exit;
-    if FindSidebarBelow(PF32, Result) then Exit;
   except
     Result := '';
+  end;
+end;
+
+function SidebarPolicySet(RootKey: Integer): Boolean;
+var
+  Value: Cardinal;
+begin
+  Result := RegQueryDWordValue(RootKey,
+              'SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Windows\Sidebar',
+              'TurnOffSidebar', Value) and (Value <> 0);
+end;
+
+{ True when gadgets are turned off by the TurnOffSidebar policy (set, for
+  example, by Microsoft Fix it 50906 on Windows 7). The registry is only read. }
+function GadgetsTurnedOffByPolicy(): Boolean;
+begin
+  Result := False;
+  try
+    Result := SidebarPolicySet(HKCU) or SidebarPolicySet(HKLM);
+    if (not Result) and IsWin64 then
+      Result := SidebarPolicySet(HKLM64);
+  except
+    Result := False;
   end;
 end;
 
@@ -352,15 +405,22 @@ begin
   end;
 end;
 
+{ Windows 7: the platform must be present and not turned off by policy (the
+  installed-programs list says nothing there). Other versions: a runtime. }
 function RuntimeFound(): Boolean;
 begin
-  Result := (FindSidebarExe() <> '') or RuntimeRegistered();
+  if IsNativeGadgetOS() then
+    Result := (FindSidebarExe() <> '') and (not GadgetsTurnedOffByPolicy())
+  else
+    Result := (FindSidebarExe() <> '') or RuntimeRegistered();
 end;
 
 { Used by [Run]: the "open the gadget gallery" option needs an executable. }
 function CanShowGadgets(): Boolean;
 begin
   Result := FindSidebarExe() <> '';
+  if Result and IsNativeGadgetOS() then
+    Result := not GadgetsTurnedOffByPolicy();
 end;
 
 function GetSidebarExe(Param: String): String;
@@ -393,7 +453,19 @@ procedure RefreshRuntimeStatus();
 begin
   try
     RuntimeOK := RuntimeFound();
-    if RuntimeOK then
+    if NativeOS then
+    begin
+      { Windows 7: nothing to download, only to turn on. }
+      if RuntimeOK then
+        RuntimeStatus.Caption := ExpandConstant('{cm:WGNativeFound}')
+      else if GadgetsTurnedOffByPolicy() then
+        RuntimeStatus.Caption := ExpandConstant('{cm:WGNativePolicyOff}')
+      else
+        RuntimeStatus.Caption := ExpandConstant('{cm:WGNativeFeatureOff}');
+      BtnInstallRuntime.Enabled := False;
+      BtnOpenPage.Enabled := False;
+    end
+    else if RuntimeOK then
     begin
       RuntimeStatus.Caption := ExpandConstant('{cm:WGRuntimeFound}');
       BtnInstallRuntime.Enabled := False;
@@ -501,14 +573,20 @@ end;
 
 procedure InitializeWizard();
 begin
+  NativeOS := IsNativeGadgetOS();
   RuntimeOK := RuntimeFound();
 
   DownloadPage := CreateDownloadPage(SetupMessage(msgWizardPreparing),
                                      SetupMessage(msgPreparingDesc), nil);
 
-  RuntimePage := CreateCustomPage(wpInfoBefore,
-                                  ExpandConstant('{cm:WGRuntimeTitle}'),
-                                  ExpandConstant('{cm:WGRuntimeDesc}'));
+  if NativeOS then
+    RuntimePage := CreateCustomPage(wpInfoBefore,
+                                    ExpandConstant('{cm:WGNativeTitle}'),
+                                    ExpandConstant('{cm:WGNativeDesc}'))
+  else
+    RuntimePage := CreateCustomPage(wpInfoBefore,
+                                    ExpandConstant('{cm:WGRuntimeTitle}'),
+                                    ExpandConstant('{cm:WGRuntimeDesc}'));
 
   RuntimeInfo := TNewStaticText.Create(RuntimePage);
   RuntimeInfo.Parent := RuntimePage.Surface;
@@ -519,7 +597,10 @@ begin
     English. AutoSize + WordWrap keeps the width and adjusts the height. }
   RuntimeInfo.WordWrap := True;
   RuntimeInfo.AutoSize := True;
-  RuntimeInfo.Caption := ExpandConstant('{cm:WGRuntimeText}');
+  if NativeOS then
+    RuntimeInfo.Caption := ExpandConstant('{cm:WGNativeText}')
+  else
+    RuntimeInfo.Caption := ExpandConstant('{cm:WGRuntimeText}');
 
   BtnInstallRuntime := TNewButton.Create(RuntimePage);
   BtnInstallRuntime.Parent := RuntimePage.Surface;
@@ -548,6 +629,16 @@ begin
   BtnRecheck.Caption := ExpandConstant('{cm:WGRuntimeRecheckBtn}');
   BtnRecheck.OnClick := @BtnRecheckClick;
 
+  { Windows 7: the platform is part of Windows, so there is nothing to
+    download. Only "Check again" is left, in place of the download button. }
+  if NativeOS then
+  begin
+    BtnInstallRuntime.Visible := False;
+    BtnOpenPage.Visible := False;
+    BtnRecheck.Left := 0;
+    BtnRecheck.Top := BtnInstallRuntime.Top;
+  end;
+
   RuntimeStatus := TNewStaticText.Create(RuntimePage);
   RuntimeStatus.Parent := RuntimePage.Surface;
   RuntimeStatus.Left := 0;
@@ -560,17 +651,28 @@ begin
   RuntimeStatus.Caption := ExpandConstant('{cm:WGRuntimeNotFound}');
 
   RuntimePage.OnActivate := @RuntimePageActivate;
+
+  { Windows 7 only: Microsoft's original Weather gadget is still there. }
+  NotePage := CreateOutputMsgPage(RuntimePage.ID,
+                                  ExpandConstant('{cm:WGNativeNoteTitle}'),
+                                  ExpandConstant('{cm:WGNativeNoteDesc}'),
+                                  ExpandConstant('{cm:WGNativeNoteText}'));
 end;
 
-{ The runtime page is skipped entirely when a runtime is already installed. }
+{ The runtime page is skipped entirely when a runtime is already installed;
+  the Windows 7 note is shown only on Windows 7. }
 function ShouldSkipPage(PageID: Integer): Boolean;
 begin
   Result := False;
   if (RuntimePage <> nil) and (PageID = RuntimePage.ID) then
-    Result := RuntimeOK;
+    Result := RuntimeOK
+  else if (NotePage <> nil) and (PageID = NotePage.ID) then
+    Result := not NativeOS;
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
+var
+  StillMsg: String;
 begin
   Result := True;
   { Silent installations (/SILENT, /VERYSILENT) never stop here: the gadget
@@ -578,7 +680,11 @@ begin
   if (RuntimePage <> nil) and (CurPageID = RuntimePage.ID) and (not RuntimeOK)
      and (not WizardSilent()) then
   begin
-    if SuppressibleMsgBox(ExpandConstant('{cm:WGRuntimeStillMissing}') + #13#10#13#10 +
+    if NativeOS then
+      StillMsg := ExpandConstant('{cm:WGNativeStillOff}')
+    else
+      StillMsg := ExpandConstant('{cm:WGRuntimeStillMissing}');
+    if SuppressibleMsgBox(StillMsg + #13#10#13#10 +
               ExpandConstant('{cm:WGContinueAnyway}'),
               mbConfirmation, MB_YESNO, IDYES) = IDNO then
       Result := False;

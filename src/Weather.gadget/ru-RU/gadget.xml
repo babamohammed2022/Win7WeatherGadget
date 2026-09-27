@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Узнайте погоду в любой точке мира.</description>
+  <description>Узнайте погоду в любой точке мира. Данные о погоде: Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

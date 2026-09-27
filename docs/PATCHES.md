@@ -59,6 +59,12 @@ plus 18 new languages. The Italian texts are unchanged (see below).
 | 31 keys added: `GeocodingLanguage`, `ReverseGeocodingLanguage`, `Attribution`, `CurrentLocation`, `Day-Sunday` … `Day-Saturday`, 20 × `SkyText-*` | texts the MSN service used to return already translated; now localized by the gadget |
 | English comments added; `hr` listed among the `%2` units in a comment | documentation only |
 
+### `gadget.xml` (English, root) and `<locale>/gadget.xml` (since 1.0.1)
+
+| Change | Why |
+|---|---|
+| `scripts/build.py` appends `Weather data by Open-Meteo.` (`ENGLISH_DESCRIPTION_CREDIT`) to the `<description>`; each `<locale>/gadget.xml` carries the translated sentence | credits the data source, and on Windows 7 tells this gadget apart from Microsoft's original Weather gadget, which is still installed there with the same name and icon (gallery > *Show details*). The folder name `Weather.gadget` is unchanged, so upgrades and saved settings keep working |
+
 ### `weather.html`, `settings.html`
 
 | Change | Why |
@@ -130,6 +136,39 @@ polling). Changing the location was the only way out. The shim now:
 - stores location names with a typographic apostrophe (`L’Aquila`): weather.js
   puts the saved location code inside a quoted `setInterval` string while it
   polls, and a plain apostrophe would break that string.
+
+### Windows 7 (since 1.0.1)
+
+On a real Windows 7 the Sidebar is Microsoft's own, VBScript works and the
+location sensor object (`factory`) exists, so paths that Windows 10/11 never
+reach are used. The shim now:
+
+- returns the city name inside the location code of a reverse-geocoding
+  result (`lat,lon|name`). With a location sensor, weather.js saves that code
+  as it is (settings.js, instead, appends `ZipCode`), so the gadget showed the
+  coordinates (`48.86, 2.35`) instead of the city;
+- parses answers without the `JSON` object when it is missing (the Sidebar
+  shows gadgets in the IE7 document mode, on every Windows version): the text
+  is evaluated only after the json2.js validity check, so an answer that is not
+  plain JSON is rejected instead of being run as code.
+
+Windows 7 also needs TLS 1.2 for the three HTTPS services. The request chain
+tries `Msxml2.ServerXMLHTTP` (WinHTTP, TLS 1.2 only with KB3140245 and the
+`DefaultSecureProtocols` setting) and then `Msxml2.XMLHTTP` (WinINet, which
+uses the Internet Explorer setting *Use TLS 1.2*, on by default with IE 11).
+
+The installer (`installer/Setup.iss`), `Launch.cmd`, `Install.cmd` and
+`Diagnostics.ps1` detect Windows Vista/7 (6.0/6.1): the gadget platform is part
+of Windows there, so nothing is downloaded and only the built-in
+`Program Files\Windows Sidebar\sidebar.exe` counts; when the *Windows Gadget
+Platform* feature or the `TurnOffSidebar` policy has turned it off, they
+explain how to turn it back on. The installer also shows a Windows 7 page
+about the two Weather gadgets in the gallery.
+
+On 64-bit Windows they only ever start the 64-bit `sidebar.exe` (the
+installer is a 32-bit program, where `{commonpf}` is `Program Files (x86)`):
+GadgetPack 38 refuses the 32-bit version, and on Windows 7 it would be a
+second, separate sidebar.
 
 
 ## Encoding

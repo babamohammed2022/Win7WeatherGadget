@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Tekintse meg az időjárást a világ bármely pontján.</description>
+  <description>Tekintse meg az időjárást a világ bármely pontján. Az időjárási adatokat az Open-Meteo szolgáltatja.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

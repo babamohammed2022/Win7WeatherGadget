@@ -26,16 +26,35 @@ function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan
 $fail = 0
 
 Head "1. Gadgets runtime (sidebar)"
+# Windows Vista and 7 (6.0, 6.1) include the gadget platform.
+$os = [Environment]::OSVersion.Version
+$native = ($os.Major -eq 6 -and $os.Minor -le 1)
+# The runtime of the architecture of Windows: the 32-bit sidebar.exe in
+# "Program Files (x86)" is not used (GadgetPack 38 refuses it).
+$pf = $env:ProgramW6432
+if (-not $pf) { $pf = $env:ProgramFiles }
+$candidates = @("$pf\Windows Sidebar\sidebar.exe")
+if (-not $native) {
+    $candidates += @("$pf\Desktop Gadgets\sidebar.exe",
+                     "$pf\Gadgets Revived\sidebar.exe",
+                     "$pf\Windows Sidebar\8GadgetPack.exe")
+}
 $found = $false
-foreach ($p in @("$env:ProgramFiles\Windows Sidebar\sidebar.exe",
-                 "${env:ProgramFiles(x86)}\Windows Sidebar\sidebar.exe",
-                 "$env:ProgramFiles\Desktop Gadgets\sidebar.exe",
-                 "$env:ProgramFiles\Gadgets Revived\sidebar.exe",
-                 "$env:ProgramFiles\8GadgetPack.exe",
-                 "${env:ProgramFiles(x86)}\8GadgetPack.exe")) {
+foreach ($p in $candidates) {
     if (Test-Path $p) { OK "found: $p"; $found = $true; break }
 }
-if (-not $found) { KO "sidebar not found: install the runtime (gadgetsrevived.com or 8gadgetpack.net)"; $fail++ }
+if ($native) {
+    Info "Windows $($os.Major).$($os.Minor): the gadget platform is part of Windows"
+    $policy = $null
+    foreach ($root in @('HKCU:', 'HKLM:')) {
+        $v = Get-ItemProperty -Path "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Windows\Sidebar" -Name TurnOffSidebar -ErrorAction SilentlyContinue
+        if ($v -and $v.TurnOffSidebar -ne 0) { $policy = $root }
+    }
+    if ($policy) { KO "gadgets are turned off by the TurnOffSidebar policy ($policy)"; $fail++ }
+    if (-not $found) { KO "sidebar not found: turn on 'Windows Gadget Platform' in 'Turn Windows features on or off'"; $fail++ }
+} elseif (-not $found) {
+    KO "sidebar not found: install the runtime (gadgetsrevived.com or 8gadgetpack.net)"; $fail++
+}
 
 Head "2. Gadget installed"
 $gad = "$env:LOCALAPPDATA\Microsoft\Windows Sidebar\Gadgets"

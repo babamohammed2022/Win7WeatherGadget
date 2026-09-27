@@ -18,6 +18,9 @@
 // is available, without being stuck on "Getting data..." and without the user
 // having to change the location. Timers run on the virtual clock of helpers.cjs.
 //
+// Windows 7 flow (Italian): as on a real Windows 7, with VBScript and the
+// location sensor object, after a restart with and without a sensor.
+//
 // Offline by default (tests/fixtures). With --online the English and Italian
 // flows use real HTTPS requests to Open-Meteo.
 ////////////////////////////////////////////////////////////////////////////////
@@ -185,6 +188,65 @@ async function restartFlow(r) {
   r.check("apostrophe in a saved location (L'Aquila): weather restored after the outage", showsWeather(sc, "L'Aquila"), JSON.stringify(sc));
 }
 
+// Real Windows 7: VBScript works, the location sensor object exists and the
+// gadget platform is Microsoft's own. "sensor" is the fake location provider
+// (null: no object, as on Windows 10/11).
+function windows7Gadget(upAt, sensor) {
+  const g = createGadget({
+    locale: 'it-IT', scripts: ['js/highDpiImageSwap.js'].concat(WEATHER_SCRIPTS), html: 'weather.html',
+    globals: { vbsGetLocale: () => 1040 },
+    settings: { WeatherLocation: 'Roma', WeatherLocationCode: '41.8919,12.5113|Roma|', DisplayDegreesIn: 'Celsius' },
+    responder: (u) => (g.now() < upAt ? NETWORK_THROWS : fixtureResponder(u))
+  });
+  if (sensor) g.document.getElementById('factory').object = sensor;
+  g.useVirtualClock();
+  return g;
+}
+
+function fakeSensor(status, lat, lon) {
+  return {
+    Status: status,
+    LatLongReport: { Latitude: lat, Longitude: lon, ErrorRadius: 100, Timestamp: new Date() },
+    listening: 0,
+    ListenForReports() { this.listening++; },
+    StopListeningForReports() {}
+  };
+}
+
+async function windows7Flow(r) {
+  // 1. Location sensor platform present but no sensor (status 0, the usual
+  //    case): the saved city is used and shown once the network is up.
+  const a = windows7Gadget(20000, fakeSensor(0, 0, 0));
+  a.run('setup()');
+  await a.advance(45000);
+  const sa = screen(a);
+  r.check('Windows 7 (location platform, no sensor): weather for the saved city after a restart',
+    showsWeather(sa, 'Roma') && a.scriptErrors.length === 0, JSON.stringify(sa) + ' ' + a.scriptErrors.map(String).join(';'));
+
+  // 2. With a working location sensor: the reverse geocoding fails while the
+  //    network is down, the gadget falls back to the saved city (Microsoft's
+  //    "continue to fetch data for last location") instead of stopping.
+  const b = windows7Gadget(20000, fakeSensor(4, 48.8566, 2.3522));
+  b.run('setup()');
+  await b.advance(45000);
+  const sb = screen(b);
+  r.check('Windows 7 (location sensor): reverse geocoding attempted',
+    b.requests.some((q) => q.url.indexOf('https://api.bigdatacloud.net/') === 0));
+  r.check('Windows 7 (location sensor): weather shown after a restart without network',
+    sb.valid === true && sb.status === 200 && /-?\d+°/.test(sb.temp) && !sb.messageVisible && b.scriptErrors.length === 0,
+    JSON.stringify(sb) + ' ' + b.scriptErrors.map(String).join(';'));
+
+  // 3. Location sensor and network ready: the city comes from the coordinates.
+  const c = windows7Gadget(0, fakeSensor(4, 48.8566, 2.3522));
+  c.run('setup()');
+  await c.advance(5000);
+  const sc = screen(c);
+  const city = JSON.parse(fixture('bigdatacloud-reverse.json'));
+  const expected = city.city || city.locality || city.principalSubdivision;
+  r.check('Windows 7 (location sensor): current location "' + expected + '" shown',
+    showsWeather(sc, expected) && c.scriptErrors.length === 0, JSON.stringify(sc));
+}
+
 (async () => {
   const r = createRunner('Gadget integration (' + (ONLINE ? 'online' : 'offline fixtures') + ')');
   // Without VBScript, weather.js keeps its built-in default unit (Celsius);
@@ -198,5 +260,6 @@ async function restartFlow(r) {
   await settingsFlow(r, 'en-US', 'Milano');
   await settingsFlow(r, 'it-IT', 'Milano');
   if (!ONLINE) await restartFlow(r);
+  if (!ONLINE) await windows7Flow(r);
   r.done();
 })().catch((e) => { console.error(e); process.exit(1); });

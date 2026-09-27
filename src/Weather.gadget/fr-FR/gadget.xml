@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Découvrez la météo partout dans le monde.</description>
+  <description>Découvrez la météo partout dans le monde. Données météo fournies par Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>查看世界各地的天氣。</description>
+  <description>查看世界各地的天氣。天氣資料由 Open-Meteo 提供。</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

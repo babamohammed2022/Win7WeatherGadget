@@ -1,6 +1,6 @@
 # Windows 7 Weather Gadget
 
-A multilingual restoration of the classic Windows Weather desktop gadget for Windows versions with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
+A multilingual restoration of the classic Windows Weather desktop gadget for Windows 7, and for Windows 10 and 11 with a compatible Sidebar runtime. The project preserves the existing gadget design and replaces its retired weather service.
 
 
 
@@ -27,7 +27,9 @@ English, Italian, German, French, Spanish, Brazilian Portuguese, Dutch, Polish, 
 
 ## Compatibility
 
-Windows 10 and Windows 11 require a separate Windows Sidebar-compatible gadget runtime, such as Gadgets Revived or 8GadgetPack. The runtime is not bundled with this project. Internet access is required for weather and location services.
+Windows 10 and Windows 11 require a separate Windows Sidebar-compatible gadget runtime, such as Gadgets Revived or 8GadgetPack. The runtime is not bundled with this project. On 64-bit Windows the installer and the scripts only start the 64-bit `sidebar.exe`: GadgetPack 38 no longer runs its 32-bit version. Internet access is required for weather and location services.
+
+On a real Windows 7 the gadget platform is part of Windows, so nothing else is installed or downloaded. If the platform has been turned off (the *Windows Gadget Platform* feature, or the `TurnOffSidebar` policy set by Microsoft Fix it 50906), the installer explains how to turn it back on. Windows 7 also keeps Microsoft's original Weather gadget, which no longer receives data: the gadget gallery may then show two Weather gadgets with the same icon. Use **Show details** in the gallery; the description of this gadget ends with "Weather data by Open-Meteo." (translated in each language). The location sensor of Windows 7 is supported. Windows 7 needs TLS 1.2 for the weather services: it is on by default with Internet Explorer 11 (Internet Options > Advanced > Use TLS 1.2).
 
 ## Building from Source
 

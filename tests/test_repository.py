@@ -42,7 +42,7 @@ LOCALES = [
     "da-DK", "fi-FI", "cs-CZ", "hu-HU",
 ]
 # Microsoft files that carry documented patches (docs/PATCHES.md).
-PATCHED = {"js/weather.js", "js/settings.js", "js/localizedStrings.js"}
+PATCHED = {"js/weather.js", "js/settings.js", "js/localizedStrings.js", "gadget.xml"}
 # Written for the port (not Microsoft code).
 PROJECT_FILES = {"js/wlservices_shim.js"}
 
@@ -455,6 +455,95 @@ class ReleasePackagingTests(unittest.TestCase):
         self.assertIn("-GadgetNames Weather-Portable", remove)
         self.assertNotIn("reg add", launch.lower())
         self.assertNotIn("reg add", remove.lower())
+
+
+# Custom-message file -> gadget locale (for the Windows 7 note).
+ISL_LOCALES = {
+    "English": None, "Italian": "it-IT", "German": "de-DE", "French": "fr-FR", "Spanish": "es-ES",
+    "BrazilianPortuguese": "pt-BR", "Dutch": "nl-NL", "Polish": "pl-PL", "Russian": "ru-RU",
+    "Japanese": "ja-JP", "Korean": "ko-KR", "ChineseSimplified": "zh-CN", "ChineseTraditional": "zh-TW",
+    "Turkish": "tr-TR", "Swedish": "sv-SE", "Norwegian": "nb-NO", "Danish": "da-DK", "Finnish": "fi-FI",
+    "Czech": "cs-CZ", "Hungarian": "hu-HU",
+}
+
+
+class GadgetPlatformTests(unittest.TestCase):
+    """64-bit runtimes (GadgetPack 38 has no 32-bit sidebar) and real Windows 7."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.iss = read_text(os.path.join(ROOT, "installer", "Setup.iss"), encoding="utf-8")
+        cls.scripts = {name: read_text(os.path.join(ROOT, "scripts", name), encoding="ascii")
+                       for name in ("Launch.cmd", "Install.cmd")}
+
+    def _function(self, name):
+        return self.iss.split("function %s(" % name, 1)[1].split("\nend;", 1)[0]
+
+    def test_installer_never_starts_the_32_bit_sidebar(self):
+        # The installer is 32-bit: {commonpf} would be "Program Files (x86)".
+        self.assertNotIn("ExpandConstant('{commonpf}')", self.iss)
+        native = self._function("NativeProgramFiles")
+        self.assertIn("if IsWin64 then", native)
+        self.assertIn("{commonpf64}", native)
+        find = self._function("FindSidebarExe")
+        self.assertIn("PF := NativeProgramFiles();", find)
+        self.assertNotIn("commonpf32", find)
+        self.assertNotIn("PF32", find)
+        self.assertIn("\\Windows Sidebar\\8GadgetPack.exe", find)
+        # Every executable the installer starts comes from FindSidebarExe.
+        self.assertIn('Filename: "{code:GetSidebarExe}"', self.iss)
+        self.assertIn("Sidebar := FindSidebarExe();", self.iss)
+
+    def test_installer_handles_native_windows_7(self):
+        native = self._function("IsNativeGadgetOS")
+        self.assertIn("(Version.Major = 6) and (Version.Minor <= 1)", native)
+        found = self._function("RuntimeFound")
+        self.assertIn("IsNativeGadgetOS()", found)
+        self.assertIn("GadgetsTurnedOffByPolicy()", found)
+        self.assertIn("TurnOffSidebar", self.iss)
+        # No download on Windows 7: the buttons are hidden and never enabled.
+        wizard = self.iss.split("procedure InitializeWizard();", 1)[1]
+        self.assertRegex(wizard, r"if NativeOS then\s+begin\s+BtnInstallRuntime\.Visible := False;\s+BtnOpenPage\.Visible := False;")
+        refresh = self.iss.split("procedure RefreshRuntimeStatus();", 1)[1].split("\nend;", 1)[0]
+        native_branch = refresh.split("if NativeOS then", 1)[1].split("else if RuntimeOK then", 1)[0]
+        self.assertIn("BtnInstallRuntime.Enabled := False;", native_branch)
+        self.assertNotIn("BtnInstallRuntime.Enabled := True;", native_branch)
+        for key in ("WGNativeTitle", "WGNativeDesc", "WGNativeText", "WGNativeFound", "WGNativePolicyOff",
+                    "WGNativeFeatureOff", "WGNativeStillOff", "WGNativeNoteTitle", "WGNativeNoteDesc",
+                    "WGNativeNoteText"):
+            self.assertIn("{cm:%s}" % key, self.iss)
+        self.assertIn("Result := not NativeOS;", self.iss)
+
+    def test_scripts_use_the_native_program_files_only(self):
+        for name, text in self.scripts.items():
+            self.assertNotIn("%ProgramFiles(x86)%", text, name)
+            self.assertIn('if defined ProgramW6432 set "PF=%ProgramW6432%"', text, name)
+            self.assertIn("\\Windows Sidebar\\8GadgetPack.exe", text, name)
+            self.assertIn('if "%%A"=="6" if %%B LEQ 1 set "NATIVE=1"', text, name)
+            self.assertIn("TurnOffSidebar", text, name)
+            self.assertIn(":nativeoff", text, name)
+        # Install.cmd: nothing is downloaded on Windows 7.
+        self.assertIn(':nativecheck\nset "DOHOST=0"', self.scripts["Install.cmd"].replace("\r\n", "\n"))
+
+    def test_gadget_description_credits_open_meteo_in_every_language(self):
+        build = load_build_module()
+        self.assertEqual("Weather data by Open-Meteo.", build.ENGLISH_DESCRIPTION_CREDIT)
+        overlay = os.path.join(ROOT, "src", "Weather.gadget")
+        custom = os.path.join(ROOT, "installer", "Languages", "Custom")
+        for isl, loc in sorted(ISL_LOCALES.items()):
+            note = [line for line in read_text(os.path.join(custom, isl + ".isl")).splitlines()
+                    if line.startswith("WGNativeNoteText=")]
+            self.assertEqual(1, len(note), isl)
+            if loc is None:
+                credit = build.ENGLISH_DESCRIPTION_CREDIT
+            else:
+                manifest = read_text(os.path.join(overlay, loc, "gadget.xml"))
+                description = re.search(r"<description>([^<]*)</description>", manifest).group(1)
+                self.assertIn("Open-Meteo", description, loc)
+                credit = re.split(r"(?<=[.\u3002]) ?|(?<=\u3002)", description)
+                credit = [c for c in credit if "Open-Meteo" in c][0]
+            # The note tells the user what to look for in the gallery details.
+            self.assertIn(credit.strip(), note[0], isl)
 
 
 class VersionTests(unittest.TestCase):

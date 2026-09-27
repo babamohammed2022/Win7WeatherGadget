@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>전 세계의 날씨를 확인하세요.</description>
+  <description>전 세계의 날씨를 확인하세요. 날씨 데이터 제공: Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

@@ -66,6 +66,23 @@ const { createGadget, createRunner, fixture, fixtureResponder, NETWORK_THROWS, N
   r.check('label defaults to the coordinates', g.run('WLServicesShim._parseLocationCode("41.9,12.5").label') === '41.90, 12.50');
   r.check('rejects MSN codes', g.run('WLServicesShim._parseLocationCode("wc:ITXX0067")') === null);
 
+  // --- JSON without the JSON object (IE7 document mode of the Sidebar) ------
+  const ie7 = createGadget();
+  ie7.run('JSON = undefined; var __pwned = false;');
+  ie7.sandbox.__json = '{"a":[1,-2.5e3,true,null,"x\\u00e8\\"y\\\\"],"b":{}}';
+  ie7.sandbox.__json2028 = '{"a":"x\u2028y"}';
+  r.check('IE7 mode: valid JSON is parsed without the JSON object',
+    ie7.run('WLServicesShim._parseJson(__json).a[4]') === 'x\u00e8"y\\' && ie7.run('WLServicesShim._parseJson(__json).a[1]') === -2500);
+  r.check('IE7 mode: U+2028 inside a string is accepted',
+    ie7.run('WLServicesShim._parseJson(__json2028).a') === 'x\u2028y');
+  let rejected = 0;
+  for (const bad of ['{"a":(__pwned=true)}', '{"a":1};__pwned=true', 'alert(1)', '', '{"a":__pwned=true}']) {
+    try { ie7.run('WLServicesShim._parseJson(' + JSON.stringify(bad) + ')'); } catch (e) { rejected++; }
+  }
+  r.check('IE7 mode: anything that is not JSON is rejected, never run', rejected === 5 && ie7.run('__pwned') === false);
+  const ie7res = await ie7.search('SearchByCode', '41.9028,12.4964|Roma|');
+  r.check('IE7 mode: forecast shown without the JSON object', ie7res.RetCode === 200 && ie7res.item(0).Location === 'Roma');
+
   // --- SearchByCode --------------------------------------------------------
   const fc = JSON.parse(fixture('open-meteo-forecast.json'));
   const it = createGadget({ locale: 'it-IT' });
@@ -200,7 +217,10 @@ const { createGadget, createRunner, fixture, fixtureResponder, NETWORK_THROWS, N
   const rres = await rev.search('SearchByLocation', '48.8566, 2.3522');
   r.check('reverse geocoding uses BigDataCloud with the gadget language (fr)',
     /api\.bigdatacloud\.net/.test(rev.requests[0].url) && /localityLanguage=fr$/.test(rev.requests[0].url), rev.requests[0].url);
-  r.check('reverse geocoding returns the city', rres.item(0).Location === 'Paris' && rres.item(0).LocationCode === '48.8566,2.3522');
+  // The code carries the name: weather.js saves it as it is (Windows 7
+  // location sensor), unlike settings.js, which appends ZipCode.
+  r.check('reverse geocoding returns the city, with the name in the code',
+    rres.item(0).Location === 'Paris' && rres.item(0).LocationCode === '48.8566,2.3522|Paris', rres.item(0).LocationCode);
   const revDown = createGadget({ responder: () => null });
   const rdres = await revDown.search('SearchByLocation', '48.8566, 2.3522');
   r.check('reverse geocoding failure -> service unavailable (not 1506)', rdres.RetCode === C.unavailable && rdres.Count === 0);

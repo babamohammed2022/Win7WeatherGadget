@@ -282,8 +282,29 @@ def assemble_source(payload_zip=None):
         os.makedirs(os.path.dirname(target), exist_ok=True)
         shutil.copyfile(path, target)
     apply_english_overrides()
+    apply_manifest_credit()
     log("assembled gadget from pinned release payload plus %d project overlay files" %
         sum(1 for _ in iter_files(OVERLAY_SRC)))
+
+
+# Appended to the English gadget description (the translations carry their own
+# text in <locale>/gadget.xml). It credits the data source, as Open-Meteo's
+# licence asks, and on Windows 7 it tells this gadget apart from Microsoft's
+# original Weather gadget, which has the same name and icon in the gallery.
+ENGLISH_DESCRIPTION_CREDIT = "Weather data by Open-Meteo."
+
+
+def apply_manifest_credit():
+    path = os.path.join(SRC, "gadget.xml")
+    text = _read(path, encoding="utf-8", newline="")
+    match = re.search(r"<description>([^<]*)</description>", text)
+    if not match:
+        raise BuildError("gadget.xml has no <description> element")
+    if ENGLISH_DESCRIPTION_CREDIT not in match.group(1):
+        description = match.group(1).rstrip() + " " + ENGLISH_DESCRIPTION_CREDIT
+        text = text[:match.start(1)] + description + text[match.end(1):]
+        with io.open(path, "w", encoding="utf-8", newline="") as fh:
+            fh.write(text)
 
 
 def apply_english_overrides():

@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Se hur vädret är runt om i världen.</description>
+  <description>Se hur vädret är runt om i världen. Väderdata från Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

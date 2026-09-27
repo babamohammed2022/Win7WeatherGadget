@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>世界各地の天気を表示します。</description>
+  <description>世界各地の天気を表示します。気象データ提供: Open-Meteo。</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>

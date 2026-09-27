@@ -1,7 +1,7 @@
 ﻿Gadget Meteo di Windows 7
 =========================
 
-Una versione del gadget Meteo di Windows 7 per Windows 10 e Windows 11.
+Il gadget Meteo di Windows 7 per Windows 7, Windows 10 e Windows 11.
 Il gadget originale Microsoft è rimasto com'era; è stata sostituita solo la
 fonte dei dati, perché il servizio meteo MSN che usava è stato chiuso.
 
@@ -22,6 +22,18 @@ desktop. Serve un runtime di terze parti, ad esempio Gadgets Revived
 (https://8gadgetpack.net). Se non ne viene trovato nessuno, la pagina
 successiva spiega come installarlo. Non viene scaricato nulla se non fai
 clic sul pulsante di download.
+Su Windows a 64 bit viene avviato solo il runtime a 64 bit (GadgetPack 38
+non esegue più la versione a 32 bit).
+
+WINDOWS 7
+Windows 7 include già la piattaforma dei gadget: non serve altro e non
+viene scaricato nulla. Se è stata disattivata, la pagina successiva spiega
+come riattivarla. Windows 7 include anche il gadget Meteo originale di
+Microsoft, che non riceve più dati, quindi la raccolta dei gadget può
+mostrare due gadget Meteo con la stessa icona. Selezionane uno e fai clic
+su "Mostra dettagli": la descrizione di questo termina con "Dati meteo
+forniti da Open-Meteo." Windows 7 richiede TLS 1.2 (attivo per
+impostazione predefinita con Internet Explorer 11).
 
 LINGUA
 Il gadget segue la lingua di visualizzazione di Windows. È disponibile in

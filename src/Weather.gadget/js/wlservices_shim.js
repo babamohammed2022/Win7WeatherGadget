@@ -96,7 +96,7 @@ WLServicesShim._failureResult = function (retCode) {
 // service ("...SearchByCode('<code>')"), so a plain apostrophe (L'Aquila) would
 // break the polling. Use the typographic apostrophe instead.
 WLServicesShim._safeLabel = function (text) {
-	return String(text).replace(/'/g, "\u2019").replace(/[\\\r\n]/g, " ");
+	return String(text).replace(/'/g, "\u2019").replace(/[\\|\r\n]/g, " ");
 };
 
 WLServicesShim.prototype._cancelRetry = function () {
@@ -256,6 +256,28 @@ WLServicesShim._dayName = function (index) {
 // Msxml2.XMLHTTP, is not bound to the document security zone), with a chain of
 // fallbacks and, as a last resort, the native XMLHttpRequest.
 ////////////////////////////////////////////////////////////////////////////////
+// _parseJson(text)
+//
+// The Sidebar shows gadgets in the IE7 document mode, where the JSON object
+// does not exist (on Windows 7 as on Windows 10/11). The answer is then
+// evaluated, but only after the json2.js check that it contains nothing but
+// JSON: a damaged or hostile answer throws instead of running as code.
+WLServicesShim._parseJson = function (text) {
+	var s = String(text);
+	if (typeof JSON !== "undefined" && JSON && typeof JSON.parse === "function") {
+		return JSON.parse(s);
+	}
+	// U+2028/U+2029 are valid in JSON strings but not in JScript literals.
+	s = s.replace(/[\u2028\u2029]/g, function (c) { return c === "\u2028" ? "\\u2028" : "\\u2029"; });
+	var skeleton = s.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, "@")
+		.replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, "]")
+		.replace(/(?:^|:|,)(?:\s*\[)+/g, "");
+	if (/^[\],:{}\s]*$/.test(skeleton) && /\S/.test(s)) {
+		return (new Function("return (" + s + ");"))();
+	}
+	throw new SyntaxError("invalid JSON");
+};
+
 WLServicesShim._xhrGet = function (url, onOk, onErr, timeoutMs) {
 	var progIds = ["Msxml2.ServerXMLHTTP.6.0", "Msxml2.ServerXMLHTTP", "Msxml2.XMLHTTP.6.0", "Msxml2.XMLHTTP", "Microsoft.XMLHTTP"];
 	var lastErr = null;
@@ -264,11 +286,7 @@ WLServicesShim._xhrGet = function (url, onOk, onErr, timeoutMs) {
 	var watchdog = null;
 
 	function parseJson(text) {
-		try { return JSON.parse(text); }
-		catch (e) {
-			try { return (new Function("return (" + text + ")"))(); }
-			catch (e2) { throw e; }
-		}
+		return WLServicesShim._parseJson(text);
 	}
 
 	function detach(req) {
@@ -639,11 +657,15 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 	// The gadget saves LocationCode + '|' + ZipCode. The coordinates go into
 	// LocationCode and the label into ZipCode, so SearchByCode receives
 	// "lat,lon|label" exactly as it expects.
-	function makeItem(name, lat, lon) {
+	// withLabel: the location-aware path of weather.js (Windows 7 location
+	// sensor) saves LocationCode as it is, without appending the ZipCode like
+	// settings.js does, so the code must carry the name itself; otherwise the
+	// gadget shows the coordinates instead of the city.
+	function makeItem(name, lat, lon, withLabel) {
 		name = WLServicesShim._safeLabel(name);
 		return {
 			Location: name,
-			LocationCode: lat.toFixed(4) + "," + lon.toFixed(4),
+			LocationCode: lat.toFixed(4) + "," + lon.toFixed(4) + (withLabel ? "|" + name : ""),
 			ZipCode: name,
 			Fullname: name,
 			SearchDistance: "0",
@@ -673,7 +695,7 @@ WLServicesShim.prototype.SearchByLocation = function (text) {
 		WLServicesShim._xhrGet(url,
 			function (json) {
 				var name = json.city || json.locality || json.principalSubdivision || WLServicesShim._text("CurrentLocation", "Current location");
-				respond([makeItem(name, lat, lon)]);
+				respond([makeItem(name, lat, lon, true)]);
 			},
 			function (err) { respondEmpty(WLServicesShim.RETCODE_UNAVAILABLE); }
 		);

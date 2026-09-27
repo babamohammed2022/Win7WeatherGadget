@@ -8,7 +8,7 @@
     <logo src="logo.png"/>
   </author>
   <copyright>&#169; 2009</copyright>
-  <description>Katso sää eri puolilla maailmaa.</description>
+  <description>Katso sää eri puolilla maailmaa. Säätiedot: Open-Meteo.</description>
   <icons>
     <icon width="130" height="67" src="icon.png"/>
   </icons>
